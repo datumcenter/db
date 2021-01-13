@@ -1,0 +1,111 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+    id 'maven'
+}
+
+archivesBaseName = 'io.gallery.db'
+group = 'io.gallery'
+version = '0.0.1'
+sourceCompatibility = '1.8'
+jar.enabled = true
+
+repositories {
+    maven {
+        url "http://maven.aliyun.com/nexus/content/groups/public"
+    }
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.1.2'
+    compileOnly('io.springfox:springfox-swagger2:2.8.0')
+    compileOnly('io.springfox:springfox-swagger-ui:2.8.0')
+    compileOnly('org.springframework.boot:spring-boot-starter-data-redis')
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId "io.github.datumcenter"
+            artifactId "${archivesBaseName}"
+            version "${version}"
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            // 添加 pom 相关信息
+            // https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html
+            pom {
+                name = "gallery"
+                description = "Gallery of Java developing"
+                url = "https://github.com/datumcenter/gallery"
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "datumcenter"
+                        email = "datumcenter@foxmail.com"
+                    }
+                }
+                // 添加你的 git 仓库 信息
+                scm {
+                    connection = "scm:git:https://github.com/datumcenter/gallery.git"
+                    developerConnection = "scm:git:https://github.com/datumcenter/gallery.git"
+                    url = "https://github.com/datumcenter/gallery"
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = sonatypeUsername
+                password = sonatypePassword
+            }
+        }
+    }
+}
+
+signing {
+    sign version.endsWith('SNAPSHOT') ? "" : publishing.publications.mavenJava
+}
+
+javadoc {
+    options.author = true
+    options.version = true
+    options.header = project.name
+    options.encoding = "UTF-8"
+    options.charSet = "UTF-8"
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
