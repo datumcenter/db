@@ -4,3 +4,5 @@
 /build/
 /gradle/
 /out/
+/gradle.properties
+/secring.gpg
