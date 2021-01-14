@@ -13,8 +13,7 @@ public class DataBaseUtil {
     /**
      * 执行拼接好的SQL
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
      */
     public static void execute(String sql) {
         dataBaseMapper.exec(sql);
@@ -23,9 +22,8 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL
      *
-     * @param sql
-     * @param input
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
      */
     public static void execute(String sql, Map<String, Object> input) {
         input = Optional.ofNullable(input).orElse(new HashMap<String, Object>());
@@ -36,8 +34,8 @@ public class DataBaseUtil {
     /**
      * 执行拼接好的SQL，返回列表
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
+     * @return 列表
      */
     public static List<HashMap> select(String sql) {
         List list = dataBaseMapper.execute(sql);
@@ -50,8 +48,8 @@ public class DataBaseUtil {
     /**
      * 执行拼接好的SQL，返回数量
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
+     * @return 数量
      */
     public static long count(String sql) {
         return dataBaseMapper.executeCount("select count(1) from (" + sql + ") t ");
@@ -60,9 +58,9 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回列表
      *
-     * @param sql
-     * @param input
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @return 列表
      */
     public static List<HashMap> select(String sql, Map input) {
         input = Optional.ofNullable(input).orElse(new HashMap<String, Object>());
@@ -77,9 +75,10 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回列表
      *
-     * @param sql
-     * @param clazz
-     * @return
+     * @param sql   自定义SQL
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 列表
      */
     public static <T> List<T> select(String sql, Class<T> clazz) {
         return Optional.ofNullable(select(sql)).map(list -> list.stream().map(map -> DataBaseTools.mapToBeanIngnoreCase((Map<String, Object>) map, clazz)).collect(Collectors.toList())).orElse(Collections.emptyList());
@@ -89,10 +88,11 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回列表
      *
-     * @param sql
-     * @param input
-     * @param clazz
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 列表
      */
     public static <T> List<T> select(String sql, Map input, Class<T> clazz) {
         return Optional.ofNullable(select(sql, input)).map(list -> list.stream().map(map -> DataBaseTools.mapToBeanIngnoreCase((Map<String, Object>) map, clazz)).collect(Collectors.toList())).orElse(Collections.emptyList());
@@ -101,9 +101,9 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回列表
      *
-     * @param sql
-     * @param input
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @return 数量
      */
     public static long count(String sql, Map input) {
         input = Optional.ofNullable(input).orElse(new HashMap<String, Object>());
@@ -114,9 +114,9 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回影响条数
      *
-     * @param sql
-     * @param input
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @return 数量
      */
     public static long insertOrUpdate(String sql, Map input) {
         input = Optional.ofNullable(input).orElse(new HashMap<String, Object>());
@@ -127,8 +127,8 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回影响条数
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
+     * @return 数量
      */
     public static long insertOrUpdate(String sql) {
         return insertOrUpdate(sql, null);
@@ -137,8 +137,8 @@ public class DataBaseUtil {
     /**
      * 执行拼接好的SQL，返回单条记录
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
+     * @return HashMap
      */
     public static HashMap selectOne(String sql) {
         LinkedHashMap map = Optional.ofNullable(dataBaseMapper.executeOne(sql)).orElse(new LinkedHashMap<>());
@@ -149,9 +149,10 @@ public class DataBaseUtil {
     /**
      * 执行拼接好的SQL，返回单条记录
      *
-     * @param sql
-     * @param clazz
-     * @return
+     * @param sql   自定义SQL
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 记录
      */
     public static <T> T selectOne(String sql, Class<T> clazz) {
         return DataBaseTools.mapToBeanIngnoreCase((Map<String, Object>) selectOne(sql), clazz);
@@ -160,9 +161,9 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回单条记录
      *
-     * @param sql
-     * @param input
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @return HashMap
      */
     public static HashMap selectOne(String sql, Map input) {
         input = Optional.ofNullable(input).orElse(new HashMap<String, Object>());
@@ -175,10 +176,11 @@ public class DataBaseUtil {
     /**
      * 执行预处理的SQL，返回单条记录
      *
-     * @param sql
-     * @param input
-     * @param clazz
-     * @return
+     * @param sql   自定义SQL
+     * @param input 参数
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 记录
      */
     public static <T> T selectOne(String sql, Map input, Class<T> clazz) {
         return DataBaseTools.mapToBeanIngnoreCase((Map<String, Object>) selectOne(sql, input), clazz);
@@ -187,8 +189,8 @@ public class DataBaseUtil {
     /**
      * 设置排序信息
      *
-     * @param input
-     * @return
+     * @param input 参数
+     * @return 字符串
      */
     public static String getOrderClause(Map input) {
         return Optional.ofNullable(input).map(params -> Optional.ofNullable(params.get("orderClause")).map(orderClause -> " order by ${orderClause} ").orElse("")).orElse("");
@@ -197,8 +199,8 @@ public class DataBaseUtil {
     /**
      * 设置排序信息
      *
-     * @param input
-     * @return
+     * @param input 参数
+     * @return 字符串
      */
     public static String getOrderClauseForSQL(Map input) {
         return getOrderClause(input).replace("order by", "");
@@ -207,8 +209,8 @@ public class DataBaseUtil {
     /**
      * 设置排序分页信息
      *
-     * @param input
-     * @return
+     * @param input 参数
+     * @return 字符串
      */
     public static String getPageClause(Map input) {
         String result = "";
@@ -227,8 +229,8 @@ public class DataBaseUtil {
     /**
      * 设置排序分页信息
      *
-     * @param input
-     * @return
+     * @param input 参数
+     * @return 字符串
      */
     public static String getPageClauseForSQL(Map input) {
         return getPageClause(input).replace("limit", "");
@@ -237,8 +239,8 @@ public class DataBaseUtil {
     /**
      * 设置检索条件
      *
-     * @param input
-     * @return
+     * @param input 参数
+     * @return 字符串
      */
     public static String getWhereClause(Map<String, Object> input) {
         input = removePublic(input);
@@ -258,8 +260,8 @@ public class DataBaseUtil {
     /**
      * 移除多余的SQL关键字
      *
-     * @param sql
-     * @return
+     * @param sql 自定义SQL
+     * @return 字符串
      */
     public static String removeFirstSQLKeyWord(String sql) {
         String result = "";
@@ -278,8 +280,8 @@ public class DataBaseUtil {
     /**
      * 移除公共字段
      *
-     * @param where
-     * @return
+     * @param where 条件
+     * @return Map
      */
     public static Map<String, Object> removePublic(Map<String, Object> where) {
         if (where != null) {

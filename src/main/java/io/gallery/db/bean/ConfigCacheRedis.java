@@ -29,8 +29,6 @@ import java.util.Optional;
 /**
  * Redis 缓存配置
  * 默认配置（可移除继承关系，自定义实现CacheManager，并加上@Bean注解）
- *
- * @Configuration
  */
 public class ConfigCacheRedis extends CachingConfigurerSupport implements IDataBaseCache {
     protected static CacheManager cacheManager;

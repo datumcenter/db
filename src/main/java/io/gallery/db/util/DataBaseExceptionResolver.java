@@ -26,9 +26,9 @@ public class DataBaseExceptionResolver implements HandlerExceptionResolver {
     /**
      * 处理Ajax请求错误
      *
-     * @param request
-     * @param response
-     * @param e
+     * @param request HttpServletRequest
+     * @param response HttpServletResponse
+     * @param e Exception
      */
     protected void dealAjax(HttpServletRequest request, HttpServletResponse response, Exception e) {
         // 判断是否Ajax请求

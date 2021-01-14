@@ -36,6 +36,8 @@ public enum DataBaseOperator {
 
     /**
      * 获取操作符
+     *
+     * @return 字符串
      */
     public String getOperator() {
         return operator;
@@ -48,11 +50,16 @@ public enum DataBaseOperator {
 
     /**
      * 枚举值
+     *
+     * @return 字符串
      */
     private String operator;
 
     /**
      * 判断字段中是否包含操作符或函数
+     *
+     * @param columnClause 字段信息
+     * @return 是否
      */
     public static boolean containsOperator(String columnClause) {
         boolean result = false;
@@ -70,8 +77,8 @@ public enum DataBaseOperator {
     /**
      * 获取字符串中包含的操作符
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return 字符串
      */
     public static String getOperator(String input) {
         String result = _eq.getOperator();
@@ -89,8 +96,8 @@ public enum DataBaseOperator {
     /**
      * 获取字符串中包含的函数
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return 字符串
      */
     public static String getFunction(String input) {
         String result = "";
@@ -102,6 +109,9 @@ public enum DataBaseOperator {
 
     /**
      * operator起始位置
+     *
+     * @param columnClause 入参
+     * @return 数字
      */
     public static int indexOfOperator(String columnClause) {
         int result = -1;
@@ -128,8 +138,8 @@ public enum DataBaseOperator {
     /**
      * 获取真实表名.字段名
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return 字符串
      */
     public static String getRealColumn(String input) {
         String result = input;
@@ -154,8 +164,8 @@ public enum DataBaseOperator {
     /**
      * 处理字段信息
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return ClauseColumn
      */
     public static ClauseColumn dealColumnClause(String input) {
         ClauseColumn clause = new ClauseColumn();

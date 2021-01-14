@@ -10,30 +10,30 @@ public interface IDataBaseCache {
     /**
      * 自定义需要 @Bean注解
      *
-     * @return
+     * @return CacheManager
      */
     CacheManager getCacheManager();
 
     /**
      * 获取缓存配置信息
      *
-     * @param cacheName
-     * @return
+     * @param cacheName 缓存名
+     * @return Cache
      */
     Cache get(String cacheName);
 
     /**
      * 清空缓存
      *
-     * @param cacheName
+     * @param cacheName 缓存名
      */
     void clear(String cacheName);
 
     /**
      * 获取缓存主键
      *
-     * @param cacheName
-     * @return
+     * @param cacheName 缓存名
+     * @return 缓存主键
      */
     Object keys(String cacheName);
 }

@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 /**
  * 公共服务接口默认实现
  *
- * @param <Entity>
- * @param <Query>
+ * @param <Entity> 实体
+ * @param <Query>  条件
  */
 @Service
 public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericService<Entity, Query> {
@@ -213,8 +213,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 分页查询
      *
-     * @param condition
-     * @return
+     * @param condition 条件
+     * @return 列表
      */
     @Override
     public List<Entity> select(Query condition) {
@@ -232,8 +232,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 分页查询
      *
-     * @param condition
-     * @return
+     * @param condition 条件
+     * @return 列表
      */
     @Override
     public <T> List<T> select(Query condition, Class<T> clazz) {
@@ -317,8 +317,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 数量
      *
-     * @param condition
-     * @return
+     * @param condition 条件
+     * @return 数量
      */
     @Override
     public long count(Query condition) {
@@ -349,8 +349,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * Map转实体
      *
-     * @param map
-     * @return
+     * @param map Map
+     * @return 实体类
      */
     private Entity getEntity(Map map) {
         if (map != null) {
@@ -381,7 +381,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 是否是子类
      *
-     * @return
+     * @return 是否
      */
     protected boolean isSonClass() {
         boolean result = false;
@@ -394,7 +394,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取默认表名
      *
-     * @return
+     * @return 表名
      */
     @Override
     public String getTableName() {
@@ -424,7 +424,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置表名
      *
-     * @param tableName
+     * @param tableName 表名
      */
     public void setTableName(String tableName) {
         this.tableName = tableName;
@@ -433,7 +433,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取默认主键名
      *
-     * @return
+     * @return 主键名
      */
     @Override
     public String getKeyName() {
@@ -453,9 +453,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置排序
      *
-     * @param input
-     * @param where
-     * @return
+     * @param input           入参
+     * @param where           条件
+     * @param columnFullNames 字段全称
      */
     private void setOrder(Map<String, Object> input, Map<String, Object> where, Set<String> columnFullNames) {
         String orderBy = "";
@@ -533,9 +533,10 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 排序语句是否包含字段
      *
-     * @param column
+     * @param column           字段
+     * @param columns          字段列表
      * @param hasGroupByClause
-     * @return
+     * @return 是否
      */
     private boolean orderHasColumn(String column, Set<String> columns, boolean hasGroupByClause) {
         boolean result = false;
@@ -574,8 +575,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置分组
      *
-     * @param input
-     * @param where
+     * @param input           入参
+     * @param where           条件
+     * @param columnFullNames 字段全称
      */
     private void setGroupBy(Map<String, Object> input, Map<String, Object> where, Set<String> columnFullNames) {
         if (where != null) {
@@ -593,8 +595,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取分组
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return 分组
      */
     private String getGroupBy(Map<String, Object> input) {
         return Optional.ofNullable(input.get("groupByClause")).map(Object::toString).map(String::trim).orElse(null);
@@ -603,8 +605,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置分页
      *
-     * @param input
-     * @param where
+     * @param input 入参
+     * @param where 条件
      */
     private void setLimit(Map<String, Object> input, Map<String, Object> where) {
         if (where != null) {
@@ -647,7 +649,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置外键
      *
-     * @param input
+     * @param input           入参
+     * @param columnFullNames 字段全称
      */
     private void setForgien(Map<String, Object> input, Set<String> columnFullNames) {
         StringBuilder columns = new StringBuilder();
@@ -906,7 +909,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获得request对象
      *
-     * @return
+     * @return HttpServletRequest
      */
     protected HttpServletRequest getRequest() {
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
@@ -919,8 +922,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 向Map设置自动生成的主键
      *
-     * @param record
-     * @param input
+     * @param record 记录
+     * @param input  参数
      */
     private void setGeneratedMapKey(Map record, Map<String, Object> input) {
         record.put(getKeyName(), input.get("generatedKey"));
@@ -929,9 +932,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 向Bean设置自动生成的主键
      *
-     * @param record
-     * @param input
-     * @param clazz
+     * @param record 记录
+     * @param input  参数
+     * @param clazz  类
      */
     private void setGeneratedClazzKey(Entity record, Map<String, Object> input, Class<Entity> clazz) {
         if (Map.class.getName().equalsIgnoreCase(clazz.getName())) {
@@ -946,8 +949,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 移除不存在的列对应的Key
      *
-     * @param values
-     * @return
+     * @param values Map<String, Object>
+     * @return Map
      */
     private Map<String, Object> removeRedundantCode(Map<String, Object> values) {
         if (values == null) {
@@ -991,8 +994,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 从数据库获取表字段信息
      *
-     * @param tableInfo
-     * @return
+     * @param tableInfo 表信息
+     * @return 字段列表
      */
     protected List<String> getColumnsFromDB(String tableInfo) {
         List<String> result = new ArrayList<>();
@@ -1022,8 +1025,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 处理表名和库名
      *
-     * @param tableName
-     * @return
+     * @param tableName 待处理表名
+     * @return 表名
      */
     private String dealTableName(String tableName) {
         if (DBT.isNotNull(tableName)) {
@@ -1046,8 +1049,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 批量处理表名和库名
      *
-     * @param tableNames
-     * @return
+     * @param tableNames 待处理表名数组
+     * @return 表名数组
      */
     private String[] dealTableNames(String[] tableNames) {
         List<String> result = new ArrayList<>();
@@ -1060,9 +1063,10 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 处理字段名
      *
-     * @param columnName
-     * @param tableInfo
-     * @return
+     * @param columnName      待处理字段名
+     * @param tableInfo       表信息
+     * @param columnFullNames 字段全称集合
+     * @return 字段名
      */
     private String dealColumnName(String columnName, String tableInfo, Set<String> columnFullNames) {
         boolean flag = false;
@@ -1092,9 +1096,10 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 处理字段名
      *
-     * @param columnNames
-     * @param tableInfo
-     * @return
+     * @param columnNames     待处理字段名数组
+     * @param tableInfo       表信息数组
+     * @param columnFullNames 字段全称集合
+     * @return 字段名数组
      */
     private String[] dealColumnNames(String[] columnNames, String[] tableInfo, Set<String> columnFullNames) {
         List<String> result = new ArrayList<>();

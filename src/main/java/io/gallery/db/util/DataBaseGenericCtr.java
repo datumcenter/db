@@ -164,7 +164,7 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     /**
      * 获取服务接口（单例）
      *
-     * @return
+     * @return Interface
      */
     protected Interface getService() {
         Type genericSuperclass = getClass().getGenericSuperclass();
@@ -199,9 +199,9 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     /**
      * 封装异常
      *
-     * @param result
-     * @param ajaxResult
-     * @param e
+     * @param result     BindingResult
+     * @param ajaxResult DataBaseAjaxResultContext
+     * @param e          DuplicateKeyException
      */
     private void setError(BindingResult result, DataBaseAjaxResultContext ajaxResult, DuplicateKeyException e) {
         logger.error(e.getMessage());
@@ -215,7 +215,7 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     /**
      * 初始化表信息
      *
-     * @param request
+     * @param request HttpServletRequest
      */
     protected void init(HttpServletRequest request) {
         if (request != null) {
@@ -231,7 +231,7 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     /**
      * 获得request对象
      *
-     * @return
+     * @return HttpServletRequest
      */
     public HttpServletRequest getRequest() {
         return ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
@@ -240,7 +240,7 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     /**
      * 获得request对象
      *
-     * @return
+     * @return Map
      */
     public Map getParameterMap() {
         return getRequest().getParameterMap();

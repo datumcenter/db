@@ -22,7 +22,7 @@ public class RedisUtil {
      *
      * @param key  键
      * @param time 时间(秒)
-     * @return
+     * @return 是否
      */
     public static boolean expire(String key, long time) {
         try {
@@ -64,8 +64,8 @@ public class RedisUtil {
     /**
      * 获取Key
      *
-     * @param pattern
-     * @return
+     * @param pattern 正则
+     * @return 集合
      */
     public static Set<String> keys(String pattern) {
         try {
@@ -97,7 +97,7 @@ public class RedisUtil {
      * 普通缓存获取
      *
      * @param key 键
-     * @return
+     * @return Object
      */
     public static Object get(String key) {
         return key == null ? null : getRedisTemplate().opsForValue().get(key);
@@ -108,7 +108,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return
+     * @return 是否
      */
     public static boolean set(String key, Object value) {
         try {
@@ -127,7 +127,7 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return
+     * @return true 成功 false 失败
      */
     public static boolean set(String key, Object value, long time) {
         try {
@@ -149,7 +149,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param delta 要增加几(大于0)
-     * @return
+     * @return 数字
      */
     public static long incr(String key, long delta) {
         if (delta < 0) {
@@ -163,7 +163,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param delta 要减少几(小于0)
-     * @return
+     * @return 数字
      */
     public static long decr(String key, long delta) {
         if (delta < 0) {
@@ -178,7 +178,7 @@ public class RedisUtil {
      *
      * @param key  键 不能为null
      * @param item 项 不能为null
-     * @return 值
+     * @return Object
      */
     public static Object hget(String key, String item) {
         return getRedisTemplate().opsForHash().get(key, item);
@@ -188,7 +188,7 @@ public class RedisUtil {
      * 获取hashKey对应的所有键值
      *
      * @param key 键
-     * @return 对应的多个键值
+     * @return Map
      */
     public static Map<Object, Object> hmget(String key) {
         return getRedisTemplate().opsForHash().entries(key);
@@ -299,7 +299,7 @@ public class RedisUtil {
      * @param key  键
      * @param item 项
      * @param by   要增加几(大于0)
-     * @return
+     * @return double
      */
     public static double hincr(String key, String item, double by) {
         return getRedisTemplate().opsForHash().increment(key, item, by);
@@ -311,7 +311,7 @@ public class RedisUtil {
      * @param key  键
      * @param item 项
      * @param by   要减少记(小于0)
-     * @return
+     * @return double
      */
     public static double hdecr(String key, String item, double by) {
         return getRedisTemplate().opsForHash().increment(key, item, -by);
@@ -322,7 +322,7 @@ public class RedisUtil {
      * 根据key获取Set中的所有值
      *
      * @param key 键
-     * @return
+     * @return 集合
      */
     public static Set<Object> sGet(String key) {
         try {
@@ -390,7 +390,7 @@ public class RedisUtil {
      * 获取set缓存的长度
      *
      * @param key 键
-     * @return
+     * @return 数字
      */
     public static long sGetSetSize(String key) {
         try {
@@ -425,7 +425,7 @@ public class RedisUtil {
      * @param key   键
      * @param start 开始
      * @param end   结束 0 到 -1代表所有值
-     * @return
+     * @return 列表
      */
     public static List<Object> lGet(String key, long start, long end) {
         try {
@@ -440,7 +440,7 @@ public class RedisUtil {
      * 获取list缓存的长度
      *
      * @param key 键
-     * @return
+     * @return 数字
      */
     public static long lGetListSize(String key) {
         try {
@@ -455,8 +455,8 @@ public class RedisUtil {
      * 通过索引 获取list中的值
      *
      * @param key   键
-     * @param index 索引 index>=0时， 0 表头，1 第二个元素，依次类推；index<0时，-1，表尾，-2倒数第二个元素，依次类推
-     * @return
+     * @param index 索引 index大于等于0时， 0 表头，1 第二个元素，依次类推；index小于0时，-1，表尾，-2倒数第二个元素，依次类推
+     * @return Object
      */
     public static Object lGetIndex(String key, long index) {
         try {
@@ -472,7 +472,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return
+     * @return true 成功 false失败
      */
     public static boolean lSet(String key, Object value) {
         try {
@@ -490,7 +490,7 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return
+     * @return true 成功 false失败
      */
     public static boolean lSet(String key, Object value, long time) {
         try {
@@ -509,7 +509,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return
+     * @return true 成功 false失败
      */
     public static boolean lSet(String key, List<Object> value) {
         try {
@@ -527,7 +527,7 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return
+     * @return true 成功 false失败
      */
     public static boolean lSet(String key, List<Object> value, long time) {
         try {
@@ -548,7 +548,7 @@ public class RedisUtil {
      * @param key   键
      * @param index 索引
      * @param value 值
-     * @return
+     * @return true 成功 false失败
      */
     public static boolean lUpdateIndex(String key, long index, Object value) {
         try {

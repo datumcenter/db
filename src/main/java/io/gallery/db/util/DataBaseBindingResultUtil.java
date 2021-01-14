@@ -36,8 +36,8 @@ public class DataBaseBindingResultUtil {
 	/**
 	 * 设置全局错误
 	 * 
-	 * @param bindingResult
-	 * @return
+	 * @param bindingResult BindingResult
+	 * @return 列表
 	 */
 	public static List<String> getGlobalErrors(BindingResult bindingResult) {
 		List<String> globalErrors = new ArrayList<String>();
@@ -50,8 +50,8 @@ public class DataBaseBindingResultUtil {
 	/**
 	 * 设置字段属性错误
 	 * 
-	 * @param bindingResult
-	 * @return
+	 * @param bindingResult BindingResult
+	 * @return Map
 	 */
 	public static Map<String, List<String>> getFieldErros(BindingResult bindingResult) {
 		Map<String, List<String>> fieldErrors = new HashMap<String, List<String>>();

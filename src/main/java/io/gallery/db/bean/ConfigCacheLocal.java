@@ -12,8 +12,6 @@ import java.util.Optional;
 
 /**
  * 自定义缓存配置
- *
- * @Configuration
  */
 public class ConfigCacheLocal implements IDataBaseCache {
     private static CacheManager cacheManager;

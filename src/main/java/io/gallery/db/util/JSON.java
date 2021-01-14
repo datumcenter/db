@@ -14,16 +14,14 @@ public class JSON {
     /**
      * 对象转Json字符串
      *
-     * @param object
-     * @return
+     * @param object Object
+     * @return 字符串
      */
     public static String toJSONString(Object object) {
-        if (object == null) {
+        if (object == null)
             return null;
-        }
-        if (object instanceof String) {
+        if (object instanceof String)
             return (String) object;
-        }
         try {
             return mapper.writeValueAsString(object);
         } catch (Exception e) {
@@ -39,10 +37,10 @@ public class JSON {
     /**
      * Json 字符串转对象
      *
-     * @param text
-     * @param clazz
-     * @param <T>
-     * @return
+     * @param text  字符串
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 泛型
      */
     public static <T> T parseObject(String text, Class<T> clazz) {
         if (DBT.isNull(text))
@@ -58,10 +56,10 @@ public class JSON {
     /**
      * Json 字符串转对象列表
      *
-     * @param text
-     * @param clazz
-     * @param <T>
-     * @return
+     * @param text  字符串
+     * @param clazz 类
+     * @param <T>   泛型
+     * @return 泛型
      */
     public static <T> List<T> parseArray(String text, Class<T> clazz) {
         if (DBT.isNull(text))

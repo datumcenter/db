@@ -42,7 +42,7 @@ public class DataBaseTools {
     /**
      * 获得request对象
      *
-     * @return
+     * @return HttpServletRequest
      */
     public static HttpServletRequest getRequest() {
         return ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
@@ -51,9 +51,9 @@ public class DataBaseTools {
     /**
      * 通过正则获取内容
      *
-     * @param string
-     * @param pattern
-     * @return
+     * @param string  入参
+     * @param pattern 正则
+     * @return 字符串
      */
     public static String getByPattern(String string, String pattern) {
         String result = "";
@@ -68,8 +68,8 @@ public class DataBaseTools {
     /**
      * 字符串判空
      *
-     * @param string
-     * @return
+     * @param string 入参
+     * @return 是否
      */
     public static Boolean isNull(String string) {
         return null == string || "".equals(string);
@@ -78,8 +78,8 @@ public class DataBaseTools {
     /**
      * 字符串判空
      *
-     * @param string
-     * @return
+     * @param string 入参
+     * @return 是否
      */
     public static Boolean isNotNull(String string) {
         return !isNull(string);
@@ -88,10 +88,10 @@ public class DataBaseTools {
     /**
      * 截取字符串
      *
-     * @param string
-     * @param start
-     * @param end
-     * @return
+     * @param string 入参
+     * @param start  开始
+     * @param end    结束
+     * @return 字符串
      */
     public static String subString(String string, int start, int end) {
         if (!isNull(string) && string.length() >= end) {
@@ -108,8 +108,8 @@ public class DataBaseTools {
     /**
      * 打印BindingResult的错误信息
      *
-     * @param result
-     * @param logger
+     * @param result BindingResult
+     * @param logger Log
      */
     public static void printErrors(BindingResult result, Log logger) {
         List<ObjectError> errorList = result.getAllErrors();
@@ -356,8 +356,8 @@ public class DataBaseTools {
     /**
      * 首字母转大写
      *
-     * @param string
-     * @return
+     * @param string 入参
+     * @return 字符串
      */
     public static String toUpperCaseFirst(String string) {
         if (Character.isUpperCase(string.charAt(0))) {
@@ -370,8 +370,8 @@ public class DataBaseTools {
     /**
      * 首字母转小写
      *
-     * @param string
-     * @return
+     * @param string 入参
+     * @return 字符串
      */
     public static String toLowerCaseFirst(String string) {
         if (Character.isLowerCase(string.charAt(0))) {
@@ -384,11 +384,11 @@ public class DataBaseTools {
     /**
      * 初始化数据库信息
      *
-     * @param dataBaseConfig
-     * @param platform
-     * @param tableName
-     * @param fileName
-     * @throws Exception
+     * @param dataBaseConfig 数据库配置
+     * @param platform       平台
+     * @param tableName      表名
+     * @param fileName       文件名
+     * @throws Exception 异常
      */
     public static void initTable(DataBaseConfig dataBaseConfig, DataBasePlatform platform, String tableName, String fileName) throws Exception {
         long count = 0;
@@ -446,8 +446,7 @@ public class DataBaseTools {
     /**
      * 获取Mac地址
      *
-     * @return
-     * @throws Exception
+     * @return 字符串
      */
     public static String getMacAddr() {
         String result = "";
@@ -494,8 +493,9 @@ public class DataBaseTools {
     /**
      * 字符串md5加密
      *
-     * @param input
-     * @return
+     * @param input 入参
+     * @return 字符串
+     * @throws NoSuchAlgorithmException 异常
      */
     public static String getMD5(String input) throws NoSuchAlgorithmException {
         if (input != null) {
@@ -514,8 +514,8 @@ public class DataBaseTools {
     /**
      * 解压缩字节
      *
-     * @param bytes
-     * @return
+     * @param bytes 字节
+     * @return 字符串
      */
     public static String unCompress(byte[] bytes) {
         return unCompress(bytes, "UTF-8");
@@ -524,9 +524,9 @@ public class DataBaseTools {
     /**
      * 解压缩字节
      *
-     * @param bytes
-     * @param encoding
-     * @return
+     * @param bytes    字节
+     * @param encoding 编码
+     * @return 字符串
      */
     public static String unCompress(byte[] bytes, String encoding) {
         if (bytes == null || bytes.length == 0) {
@@ -551,8 +551,8 @@ public class DataBaseTools {
     /**
      * 压缩字符串
      *
-     * @param string
-     * @return
+     * @param string 字符串
+     * @return byte[]
      */
     public static byte[] compress(String string) {
         return compress(string, "UTF-8");
@@ -561,9 +561,9 @@ public class DataBaseTools {
     /**
      * 压缩字符串
      *
-     * @param string
-     * @param encoding
-     * @return
+     * @param string   字符串
+     * @param encoding 编码
+     * @return byte[]
      */
     public static byte[] compress(String string, String encoding) {
         if (string == null || string.length() == 0) {
@@ -584,8 +584,8 @@ public class DataBaseTools {
     /**
      * 从字段名和字段类型例表中获取字段名
      *
-     * @param columnNameWithType
-     * @return
+     * @param columnNameWithType 字段
+     * @return 字符串
      */
     public static String getColumnName(String columnNameWithType) {
         if (DBT.isNotNull(columnNameWithType) && columnNameWithType.contains("::")) {
@@ -597,8 +597,8 @@ public class DataBaseTools {
     /**
      * 从字段名和字段类型例表中获取字段类型
      *
-     * @param columnNameWithType
-     * @return
+     * @param columnNameWithType 字段
+     * @return 字符串
      */
     public static String getColumnType(String columnNameWithType) {
         if (DBT.isNotNull(columnNameWithType) && columnNameWithType.contains("::")) {
@@ -610,7 +610,7 @@ public class DataBaseTools {
     /**
      * 处理大文本数据
      *
-     * @param map
+     * @param map Map
      */
     public static void dealMegaText(Map map) {
         if (map != null)
@@ -629,9 +629,9 @@ public class DataBaseTools {
     /**
      * Map的所有键大小写转换
      *
-     * @param map
-     * @param lowerCase
-     * @return
+     * @param map       Map
+     * @param lowerCase 是否
+     * @return Map
      */
     public static Map mapKeyCase(Map map, Boolean lowerCase) {
         Map<String, Object> result = new HashMap<>();
@@ -653,10 +653,10 @@ public class DataBaseTools {
      * 构造树结构
      *
      * @param list       原始数据
-     * @param treeColumn 递归字段名
+     * @param column 递归字段名
      * @param treeColumn 递归父字段名
      * @param treePlain  是否是展示原始树
-     * @return
+     * @return 列表
      */
     public static List dealTree(List list, String column, String treeColumn, boolean treePlain) {
         Integer level = 0;
@@ -692,7 +692,7 @@ public class DataBaseTools {
      * @param treeColumn 递归字段名
      * @param treeColumn 递归父字段名
      * @param parentId   父级节点ID
-     * @return
+     * @return 列表
      */
     private static List dealLeaf(List list, String column, String treeColumn, Object parentId, boolean treePlain) {
         if (parentId == null || list.size() == 0) {
