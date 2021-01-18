@@ -3,6 +3,7 @@ package io.gallery.db.util;
 import io.gallery.db.bean.DataBaseConfig;
 import io.gallery.db.bean.DataBaseGenericPage;
 import io.gallery.db.exception.DataBaseDataBindingException;
+import io.gallery.db.service.IBusinessAuth;
 import io.gallery.db.service.IDataBaseGenericService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.lang.reflect.ParameterizedType;
@@ -44,6 +46,8 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
     protected String[] forginTableKeyName;//关联表主键列名列表
     @Autowired
     DataBaseConfig dataBaseConfig;
+
+    IBusinessAuth businessAuth;
 
     public DataBaseGenericCtr() {
     }
@@ -219,6 +223,9 @@ public abstract class DataBaseGenericCtr<Interface extends IDataBaseGenericServi
      */
     protected void init(HttpServletRequest request) {
         if (request != null) {
+            if (businessAuth != null) {
+                businessAuth.setBusinessAuth(request);
+            }
             request.setAttribute("tableName", tableName);
             keyName = Optional.ofNullable(keyName).orElse("id");
             request.setAttribute("keyName", keyName);
