@@ -176,20 +176,23 @@ public class DataBaseTools {
         T bean = null;
         if (map != null && map.size() > 0 && clazz != null) {
             if (!clazz.getSimpleName().contains("Map")) {
+                String key = "";
+                String mapKey = "";
                 try {
                     BeanInfo beanInfo = Introspector.getBeanInfo(clazz);
                     PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
                     bean = clazz.newInstance();
-                    for (String mapKey : map.keySet()) {
+                    for (String mKey : map.keySet()) {
+                        mapKey = mKey;
                         for (PropertyDescriptor property : propertyDescriptors) {
-                            String key = property.getName().toLowerCase();
-                            if (mapKey.equalsIgnoreCase(key)) {
-                                setParamter(map, bean, mapKey, property);
+                            key = property.getName().toLowerCase();
+                            if (mKey.equalsIgnoreCase(key)) {
+                                setParamter(map, bean, mKey, property);
                             }
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("mapToBeanIngnoreCase error:" + e.getMessage(), e.getCause());
+                    logger.error("mapToBeanIngnoreCase error:" + e.getMessage() + ",error key:" + key + ",error mapKey:" + mapKey, e.getCause());
                 }
             } else {
                 bean = (T) map;
@@ -653,7 +656,7 @@ public class DataBaseTools {
      * 构造树结构
      *
      * @param list       原始数据
-     * @param column 递归字段名
+     * @param column     递归字段名
      * @param treeColumn 递归父字段名
      * @param treePlain  是否是展示原始树
      * @return 列表
