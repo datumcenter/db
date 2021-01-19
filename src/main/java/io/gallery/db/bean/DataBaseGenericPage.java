@@ -4,7 +4,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(value = "分页")
-public class DataBaseGenericPage extends DataBasePermission {
+public class DataBaseGenericPage extends DataBaseCommon {
     @ApiModelProperty(value = "记录位置")
     private Integer start;
     @ApiModelProperty(value = "页面显示数量", required = true)
