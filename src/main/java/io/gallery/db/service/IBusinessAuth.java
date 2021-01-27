@@ -8,6 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 public interface IBusinessAuth {
     /**
      * 业务权限信息
+     *
+     * @param request HttpServletRequest
      */
     void setBusinessAuth(HttpServletRequest request);
 }
