@@ -21,20 +21,48 @@ public class DataBaseDataBindingException extends RuntimeException {
     @JsonProperty
     private boolean success = true;
     /**
+     * 异常
+     */
+    private Exception exception;
+    /**
+     * 请求体
+     */
+    private Object body;
+
+    /**
      * 全局错误列表
      */
     @JsonProperty
-    private List<String> globalErrors = new ArrayList<String>();
+    private List<String> globalErrors = new ArrayList<>();
     /**
      * 字段属性校验错误列表
      */
     @JsonProperty
-    private Map<String, List<String>> fieldErrors = new HashMap<String, List<String>>();
+    private Map<String, List<String>> fieldErrors = new HashMap<>();
 
-    public DataBaseDataBindingException(String errors) {
+    /**
+     * @param error 错误信息
+     * @param e     异常
+     */
+    public DataBaseDataBindingException(String error, Exception e) {
         success = false;
+        exception = e;
         globalErrors = new ArrayList<String>() {{
-            add(errors);
+            add(error);
+        }};
+    }
+
+    /**
+     * @param error 错误信息
+     * @param e     异常
+     * @param in    请求入参
+     */
+    public DataBaseDataBindingException(String error, Exception e, Object in) {
+        success = false;
+        exception = e;
+        body = in;
+        globalErrors = new ArrayList<String>() {{
+            add(error);
         }};
     }
 
@@ -74,5 +102,21 @@ public class DataBaseDataBindingException extends RuntimeException {
     @Override
     public String getMessage() {
         return Optional.ofNullable(globalErrors).map(List::toString).orElse(super.getMessage());
+    }
+
+    public Exception getException() {
+        return exception;
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
+    }
+
+    public Object getBody() {
+        return body;
+    }
+
+    public void setBody(Object body) {
+        this.body = body;
     }
 }

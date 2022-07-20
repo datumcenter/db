@@ -12,6 +12,8 @@ import java.util.Optional;
 
 /**
  * 自定义缓存配置
+ * <p>
+ * Configuration
  */
 public class ConfigCacheLocal implements IDataBaseCache {
     private static CacheManager cacheManager;
@@ -35,6 +37,6 @@ public class ConfigCacheLocal implements IDataBaseCache {
 
     @Override
     public Object keys(String cacheName) {
-        return ((ConcurrentMapCache) get(cacheName)).getNativeCache().keySet().stream().map(key -> key.toString());
+        return ((ConcurrentMapCache) get(cacheName)).getNativeCache().keySet().stream().map(Object::toString);
     }
 }

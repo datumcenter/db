@@ -14,6 +14,10 @@ public class DataBaseAjaxResultContext {
      * 返回结果
      */
     private Object result;
+    /**
+     * 附加信息
+     */
+    private Object data;
 
     /**
      * 返回对象
@@ -31,7 +35,7 @@ public class DataBaseAjaxResultContext {
     /**
      * 返回文本
      *
-     * @param result 字符串
+     * @param result String
      */
     public DataBaseAjaxResultContext(String result) {
         setResult(result);
@@ -40,28 +44,47 @@ public class DataBaseAjaxResultContext {
     public DataBaseAjaxResultContext() {
     }
 
+    public static DataBaseAjaxResultContext init() {
+        return new DataBaseAjaxResultContext();
+    }
+
+    public static DataBaseAjaxResultContext init(boolean success) {
+        return DataBaseAjaxResultContext.init().setSuccess(success);
+    }
+
     public Object getResult() {
         return result;
     }
 
     /**
-     * result
+     * result：-100代表组织机构代码重复
      *
-     * @param result 结果
+     * @param result Object
+     * @return DataBaseAjaxResultContext
      */
-    public void setResult(Object result) {
+    public DataBaseAjaxResultContext setResult(Object result) {
         if (result instanceof DataBindingException) {
             // 有异常则执行失败
             setSuccess(false);
         }
         this.result = result;
+        return this;
     }
 
     public Boolean getSuccess() {
         return success;
     }
 
-    public void setSuccess(Boolean success) {
+    public DataBaseAjaxResultContext setSuccess(Boolean success) {
         this.success = success;
+        return this;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
     }
 }

@@ -5,12 +5,16 @@ import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(value = "权限")
 public class DataBaseCommon {
-    @ApiModelProperty(value = "所属机构", required = true)
+    @ApiModelProperty(value = "所属机构", hidden = true)
     private String dborgid;
-    @ApiModelProperty(value = "所属部门", required = true)
+    @ApiModelProperty(value = "所属部门", hidden = true)
     private String dbdepid;
-    @ApiModelProperty(value = "所属人", required = true)
+    @ApiModelProperty(value = "所属人", hidden = true)
     private String dbuid;
+    @ApiModelProperty(value = "创建人")
+    private String dbcuid;
+    @ApiModelProperty(value = "更新人")
+    private String dbuuid;
     @ApiModelProperty(value = "创建时间")
     private String dbctime;
     @ApiModelProperty(value = "更新时间")
@@ -54,5 +58,21 @@ public class DataBaseCommon {
 
     public void setDbutime(String dbutime) {
         this.dbutime = dbutime;
+    }
+
+    public String getDbcuid() {
+        return dbcuid;
+    }
+
+    public void setDbcuid(String dbcuid) {
+        this.dbcuid = dbcuid;
+    }
+
+    public String getDbuuid() {
+        return dbuuid;
+    }
+
+    public void setDbuuid(String dbuuid) {
+        this.dbuuid = dbuuid;
     }
 }

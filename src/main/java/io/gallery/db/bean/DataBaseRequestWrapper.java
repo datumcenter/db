@@ -24,17 +24,13 @@ public class DataBaseRequestWrapper extends HttpServletRequestWrapper {
         Object v = params.get(name);
         if (v == null) {
             result = null;
-        } else if (v instanceof String[]) {
+        } else {
             String[] strArr = (String[]) v;
             if (strArr.length > 0) {
                 result = strArr[0];
             } else {
                 result = null;
             }
-        } else if (v instanceof String) {
-            result = (String) v;
-        } else {
-            result = v.toString();
         }
 
         return result;
@@ -47,7 +43,7 @@ public class DataBaseRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return new Vector<String>(params.keySet()).elements();
+        return new Vector<>(params.keySet()).elements();
     }
 
     @Override
@@ -55,13 +51,8 @@ public class DataBaseRequestWrapper extends HttpServletRequestWrapper {
         String[] result = null;
         Object v = params.get(name);
         if (v == null) {
-            result = null;
-        } else if (v instanceof String[]) {
-            result = (String[]) v;
-        } else if (v instanceof String) {
-            result = new String[]{(String) v};
         } else {
-            result = new String[]{v.toString()};
+            result = (String[]) v;
         }
         return result;
     }
@@ -70,15 +61,15 @@ public class DataBaseRequestWrapper extends HttpServletRequestWrapper {
         String queryString = req.getQueryString();
         if (queryString != null && queryString.trim().length() > 0) {
             String[] params = queryString.split("&");
-            for (int i = 0; i < params.length; i++) {
-                int splitIndex = params[i].indexOf("=");
+            for (String param : params) {
+                int splitIndex = param.indexOf("=");
                 if (splitIndex == -1) {
                     continue;
                 }
-                String key = params[i].substring(0, splitIndex);
+                String key = param.substring(0, splitIndex);
                 if (!this.params.containsKey(key)) {
-                    if (splitIndex < params[i].length()) {
-                        String value = params[i].substring(splitIndex + 1);
+                    if (splitIndex < param.length()) {
+                        String value = param.substring(splitIndex + 1);
                         this.params.put(key, new String[]{value});
                     }
                 }

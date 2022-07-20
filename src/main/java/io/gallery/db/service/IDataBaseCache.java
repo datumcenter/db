@@ -17,7 +17,7 @@ public interface IDataBaseCache {
     /**
      * 获取缓存配置信息
      *
-     * @param cacheName 缓存名
+     * @param cacheName String
      * @return Cache
      */
     Cache get(String cacheName);
@@ -25,15 +25,15 @@ public interface IDataBaseCache {
     /**
      * 清空缓存
      *
-     * @param cacheName 缓存名
+     * @param cacheName String
      */
     void clear(String cacheName);
 
     /**
      * 获取缓存主键
      *
-     * @param cacheName 缓存名
-     * @return 缓存主键
+     * @param cacheName String
+     * @return Object
      */
     Object keys(String cacheName);
 }

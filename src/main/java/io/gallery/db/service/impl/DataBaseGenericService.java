@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
 /**
  * 公共服务接口默认实现
  *
- * @param <Entity> 实体
- * @param <Query>  条件
+ * @param <Entity> Entity
+ * @param <Query>  Query
  */
 @Service
-public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericService<Entity, Query> {
+public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericService<Entity, Query>, Cloneable {
     private static final Log logger = LogFactory.getLog(DataBaseGenericService.class);
 
     @Autowired
@@ -57,7 +57,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
         int insert = 0;
         if (record != null) {
             Map<String, Object> input = new HashMap<>();
-            input.put("table", getTableName());
+            input.put("table", getTableName(false));
             Map<String, Object> values = removeRedundantCode(DBT.objectToMap(record));
             input.put("values", values);
             if (values != null && values.size() > 0) {
@@ -68,7 +68,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                     Type genericSuperclass = getClass().getGenericSuperclass();
                     if (Object.class.getName().equalsIgnoreCase(genericSuperclass.getTypeName())) {
                         if (Object.class.getName().equalsIgnoreCase(record.getClass().getGenericSuperclass().getTypeName())) {
-                            setGeneratedMapKey((Map) record, input);
+                            setGeneratedMapKey(DBT.objectToMap(record), input);
                         } else {
                             setGeneratedClazzKey(record, input, (Class<Entity>) record.getClass().getGenericSuperclass());
                         }
@@ -99,9 +99,10 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     @Override
     public int delete(Object id) {
         Map<String, Object> input = new HashMap<>();
-        input.put("table", getTableName());
+        String tableName = getTableName(false);
+        input.put("table", tableName);
         Map<String, Object> where = new HashMap<>();
-        where.put(dealColumnName(getKeyName(), getTableName(), getColumns()), id);
+        where.put(dealColumnName(getKeyName(), tableName, getColumns(tableName)), id);
         input.put("where", where);
         if (id instanceof String && ((String) id).contains(",")) {
             return deleteByIds((String) id);
@@ -119,10 +120,11 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     @Override
     public int deleteByIds(String ids) {
         if (DBT.isNotNull(ids)) {
+            String tableName = getTableName(false);
             Map<String, Object> input = new HashMap<>();
-            input.put("table", getTableName());
+            input.put("table", tableName);
             Map<String, Object> where = new HashMap<>();
-            where.put(dealColumnName(getKeyName(), getTableName(), getColumns()), ids);
+            where.put(dealColumnName(getKeyName(), tableName, getColumns(tableName)), ids);
             input.put("where", where);
             return getMapper().delete(input);
         } else {
@@ -134,10 +136,11 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     @Override
     public int deleteByParams(Query condition) {
         Map<String, Object> input = new HashMap<>();
-        input.put("table", getTableName());
+        input.put("table", getTableName(false));
         Map<String, Object> where = DBT.objectToMap(condition);
         if (where != null && where.keySet().size() > 0) {
-            input.put("where", where);
+            Set<String> columnFullNames = getColumns(getTableName(false));
+            input.put("where", dealWhere(where, columnFullNames));
             return getMapper().deleteByParams(input);
         } else {
             return 0;
@@ -147,15 +150,19 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     @Transactional
     @Override
     public int update(Entity record) {
-        Map<String, Object> values = removeRedundantCode(DBT.objectToMap(record));
+        Map<String, Object> values = removeRedundantCode(DBT.objectToMapWithNull(record));
+        values.remove("dbuid");
+        values.remove("dbctime");
+        values.remove("dbcuid");
+        values.remove("dborgid");
+        values.remove("dbdepid");
         Map<String, Object> input = new HashMap<>();
+        String tableName = getTableName(false);
         input.put("values", values);
-        input.put("table", getTableName());
-        String keyName = dealColumnName(getKeyName(), getTableName(), getColumns());
+        input.put("table", tableName);
+        String keyName = dealColumnName(getKeyName(), tableName, getColumns(tableName));
         Object id = values.get(keyName);
-        if (values != null) {
-            values.remove(keyName);
-        }
+        values.remove(keyName);
         Map<String, Object> where = new HashMap<>();
         where.put(keyName, id);
         input.put("where", where);
@@ -174,57 +181,42 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
 
     @Override
     public <T> T get(Object id, Class<T> clazz) {
-        Map<String, Object> where = new HashMap<>();
-        Set<String> columns = getColumns();
-        where.put(dealColumnName(getKeyName(), getTableName(), columns), id);
-        Map<String, Object> input = new HashMap<>();
-        String columnCase = dataBaseConfig.getColumnCase();
-        List<String> columnsToSelect = new ArrayList();
-        columns.forEach(column -> {
-            if (column.contains(":")) {
-                columnsToSelect.add(column.split(":")[0]);
-            }
-        });
-        if (DBT.isNotNull(columnCase))
-            if (columnCase.contains("l"))
-                input.put("columns", columnsToSelect.stream().map(String::toLowerCase).collect(Collectors.joining(",")));
-            else
-                input.put("columns", columnsToSelect.stream().map(String::toUpperCase).collect(Collectors.joining(",")));
-        else
-            input.put("columns", columnsToSelect.stream().collect(Collectors.joining(",")));
-        input.put("table", getTableName());
-        input.put("where", where);
-        Map map = getMapper().get(input);
-        DBT.dealMegaText(map);
-        if (clazz == null) {
-            if (DBT.isNotNull(columnCase))
-                if (columnCase.contains("l")) {
-                    return (T) DBT.mapKeyCase(map, true);
-                } else {
-                    return (T) DBT.mapKeyCase(map, false);
-                }
-            else
-                return (T) getEntity(map);
-        } else {
-            return DBT.mapToBeanIngnoreCase((Map<String, Object>) map, clazz);
+        if (id == null) {
+            return null;
         }
+        HttpServletRequest request = DBT.getRequest();
+        boolean needView = false;
+        if (request != null) {
+            needView = "true".equalsIgnoreCase(request.getParameter("needView"));
+        }
+        String tableName = getTableName(false);
+        if (needView) {
+            getTableName(true);
+        }
+        if (!containsColumn(getKeyName(), getColumns(tableName))) {
+            String info = "默认主键字段[" + getKeyName() + "]不存在（请传入主键名）";
+            throw new DataBaseDataBindingException(info, null);
+        }
+        List<T> list = selectCommon(Maps.init(tableName + "." + getKeyName(), id).put("needView", needView).put("length", 1), clazz);
+        return list.stream().findFirst().orElse(null);
     }
 
     /**
      * 分页查询
      *
-     * @param condition 条件
-     * @return 列表
+     * @param condition Query
+     * @return List
      */
     @Override
     public List<Entity> select(Query condition) {
         Type genericSuperclass = getClass().getGenericSuperclass();
         if (genericSuperclass instanceof ParameterizedType) {
             Type type = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
-            if (type instanceof Class)
+            if (type instanceof Class) {
                 return select(condition, (Class<Entity>) type);
-            else if (type instanceof TypeVariable)
+            } else if (type instanceof TypeVariable) {
                 return select(condition, (Class<Entity>) ((TypeVariable) type).getBounds()[0]);
+            }
         }
         return select(condition, null);
     }
@@ -232,76 +224,118 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 分页查询
      *
-     * @param condition 条件
-     * @return 列表
+     * @param condition Map
+     * @return List
      */
-    @Override
-    public <T> List<T> select(Query condition, Class<T> clazz) {
+    private <T> List<T> selectCommon(Map condition, Class<T> clazz) {
+        HttpServletRequest request = getRequest();
         Map<String, Object> input = new HashMap<>();
-        Map<String, Object> where = DBT.objectToMap(condition);
-        input.put("table", getTableName());
-        if (where != null) {
-            Boolean tree = (Boolean) where.get("tree");
-            if (tree != null && tree) {
-                input.put("keyName", dealColumnName(getKeyName(), getTableName(), getColumns()));
-                input.put("tree", tree);
-                input.put("treeColumn", dealColumnName((String) Optional.ofNullable(where.get("treeColumn")).orElse(dataBaseConfig.getTreeColumn()), getTableName(), getColumns()));
-            }
+        Map<String, Object> where = Optional.ofNullable(condition).orElse(Maps.init());
+        Boolean needView = (Boolean) where.get("needView");
+        input.put("needDict", where.get("needDict"));
+        input.put("needDicts", where.get("needDicts"));
+        input.put("needKey", where.get("needKey"));
+        input.put("treePlain", where.get("treePlain"));
+        Boolean tree = (Boolean) where.get("tree");
+        String tableName = getTableName(false);
+        if (needView != null && needView) {
+            tableName = getTableName(true);
         }
-        Set<String> columnFullNames = getColumns();
-        setForgien(input, columnFullNames);
+        input.put("table", tableName);
+        if (tree != null && tree) {
+            input.put("keyName", dealColumnName(getKeyName(), tableName, getColumns(tableName)));
+            input.put("tree", true);
+            input.put("treeColumn", dealColumnName((String) Optional.ofNullable(where.get("treeColumn")).orElse(dataBaseConfig.getTreeColumn()), tableName, getColumns(tableName)));
+        }
+        Set<String> columnFullNames = getColumns(tableName);
+        setForgien(input, columnFullNames, tableName);
         setLimit(input, where);
         setGroupBy(input, where, columnFullNames);
         setOrder(input, where, columnFullNames);
         input.put("where", dealWhere(where, columnFullNames));
         input.put("dataBaseConfig", dataBaseConfig);
-        input.put("defaultDb", getRequest().getAttribute("defaultDb"));
-        List list = getMapper().select(input);
+        if (request != null) {
+            input.put("defaultDb", request.getAttribute("defaultDb"));
+        }
+        List list = null;
+        try {
+            list = getMapper().select(input);
+            String columnCase = dataBaseConfig.getColumnCase();
+            List result = new ArrayList();
+            for (Object o : list) {
+                if (o instanceof Map) {
+                    DBT.dealMegaText((Map) o);
+                    if (DBT.isNotNull(columnCase)) {
+                        if (columnCase.contains("l")) {
+                            o = DBT.mapKeyCase((Map) o, true);
+                        } else {
+                            o = DBT.mapKeyCase((Map) o, false);
+                        }
+                    }
+                }
+                result.add(o);
+            }
+            list = result;
+        } catch (Exception e) {
+            Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
+            throw new DataBaseDataBindingException("执行失败，请确认入参是否合法：" + where, e);
+        }
         Object groupByClause = input.get("groupByClause");
         if (groupByClause == null || DBT.isNull(groupByClause.toString())) {//分组不需要所有字段
             if (dataBaseConfig.isColumnAll()) {
-                if (columnFullNames != null && columnFullNames.size() > 0) {//回填空值字段
+                if (columnFullNames.size() > 0) {//回填空值字段
                     for (String name : columnFullNames) {
                         name = DBT.getColumnName(name);
                         String key;
                         if (name.contains(".")) {
                             String[] names = name.split("\\.");
-                            String table = getTableName();
-                            if (table.contains("."))
-                                table = table.split("\\.")[1];
-                            if (names[0].equalsIgnoreCase(table))
+                            if (tableName.contains(".")) {
+                                tableName = tableName.split("\\.")[1];
+                            }
+                            if (names[0].equalsIgnoreCase(tableName)) {
                                 key = names[1];
-                            else
+                            } else {
                                 key = names[0] + "_" + names[1];
-                        } else
+                            }
+                        } else {
                             key = name;
+                        }
                         for (Object o : list) {
                             Map map = (Map) o;
-                            if (map.get(key) == null)
-                                map.put(key, null);
+                            map.putIfAbsent(key, null);
                         }
                     }
                 }
             }
         }
-        List<T> result = new ArrayList<>();
-        if (clazz == null || Map.class.getName().equalsIgnoreCase(clazz.getName())) {
-            String columnCase = dataBaseConfig.getColumnCase();
-            for (Object o : list) {
-                DBT.dealMegaText((Map) o);
-                if (DBT.isNotNull(columnCase))
-                    if (columnCase.contains("l"))
-                        o = DBT.mapKeyCase((Map) o, true);
-                    else
-                        o = DBT.mapKeyCase((Map) o, false);
-            }
-            return list;
+        if (tree != null && tree) {//是否显示树结构
+            list = DBT.dealTree(list, getKeyName(), (String) input.get("treeColumn"), input.get("treePlain") != null && (boolean) input.get("treePlain"));
         }
-        for (Object o : list) {
+        List<T> result = new ArrayList<>();
+        if (clazz != null && Map.class.getName().equalsIgnoreCase(clazz.getName())) {//传入了要转换的类型,并且类型是Map
+            return list;
+        } else if (clazz == null) {//为空，但泛型可能定义了Bean类型
+            for (Object o : list) {
+                result.add((T) getEntity((Map) o));
+            }
+            return result;
+        }
+        for (Object o : list) {//传入了要转换的类型
             Map map = (Map) o;
             result.add((T) DBT.mapToBeanIngnoreCase(map, clazz));
         }
         return result;
+    }
+
+    /**
+     * 分页查询
+     *
+     * @param condition Query
+     * @return List
+     */
+    @Override
+    public <T> List<T> select(Query condition, Class<T> clazz) {
+        return selectCommon(DBT.objectToMap(condition), clazz);
     }
 
     @Override
@@ -317,25 +351,28 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 数量
      *
-     * @param condition 条件
-     * @return 数量
+     * @param condition List
+     * @return long
      */
     @Override
     public long count(Query condition) {
         Map<String, Object> input = new HashMap<>();
-        Map<String, Object> where = DBT.objectToMap(condition);
-        input.put("table", getTableName());
-        if (where != null) {
-            Boolean tree = (Boolean) where.get("tree");
-            if (tree != null && tree) {
-                input.put("keyName", dealColumnName(getKeyName(), getTableName(), getColumns()));
-                input.put("tree", tree);
-                input.put("treeColumn", dealColumnName((String) Optional.ofNullable(where.get("treeColumn")).orElse(dataBaseConfig.getTreeColumn()), getTableName(), getColumns()));
-            }
+        Map<String, Object> where = Optional.ofNullable(DBT.objectToMap(condition)).orElse(Maps.init());
+        Boolean needView = (Boolean) where.get("needView");
+        String tableName = getTableName(false);
+        if (needView != null && needView) {
+            tableName = getTableName(true);
         }
-        Set<String> columnFullNames = getColumns();
+        input.put("table", tableName);
+        Boolean tree = (Boolean) where.get("tree");
+        if (tree != null && tree) {
+            input.put("keyName", dealColumnName(getKeyName(), tableName, getColumns(tableName)));
+            input.put("tree", true);
+            input.put("treeColumn", dealColumnName((String) Optional.ofNullable(where.get("treeColumn")).orElse(dataBaseConfig.getTreeColumn()), tableName, getColumns(tableName)));
+        }
+        Set<String> columnFullNames = getColumns(tableName);
         input.put("dataBaseConfig", dataBaseConfig);
-        setForgien(input, columnFullNames);
+        setForgien(input, columnFullNames, tableName);
         setGroupBy(input, where, columnFullNames);
         input.put("where", dealWhere(where, columnFullNames));
         return getMapper().count(input);
@@ -343,88 +380,103 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
 
     @Override
     public boolean exist(Query query) {
-        return count(query) > 0 ? true : false;
+        return count(query) > 0;
     }
 
     /**
      * Map转实体
      *
      * @param map Map
-     * @return 实体类
+     * @return Entity
      */
-    private Entity getEntity(Map map) {
+    @Override
+    public Entity getEntity(Map map) {
         if (map != null) {
             Type genericSuperclass = getClass().getGenericSuperclass();
-            if (Object.class.getName().equalsIgnoreCase(genericSuperclass.getTypeName()))
+            if (Object.class.getName().equalsIgnoreCase(genericSuperclass.getTypeName())) {
                 return (Entity) map;
+            }
             if (genericSuperclass instanceof ParameterizedType) {
                 Type type = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
                 if (type instanceof Class) {
                     Class<Entity> clazz = (Class<Entity>) type;
-                    if (Map.class.getName().equalsIgnoreCase(clazz.getName()))
+                    if (Map.class.getName().equalsIgnoreCase(clazz.getName())) {
                         return (Entity) map;
+                    }
                     return (Entity) DBT.mapToBeanIngnoreCase(map, clazz);
                 } else if (type instanceof TypeVariable) {
                     Class<Entity> clazz = (Class<Entity>) ((TypeVariable) type).getBounds()[0];
-                    if (Map.class.getName().equalsIgnoreCase(clazz.getName()))
+                    if (Map.class.getName().equalsIgnoreCase(clazz.getName())) {
                         return (Entity) map;
-                    else
+                    } else {
                         return (Entity) DBT.mapToBeanIngnoreCase(map, clazz);
-                } else
+                    }
+                } else {
                     return (Entity) map;
-            } else
+                }
+            } else {
                 return (Entity) map;
-        } else
+            }
+        } else {
             return null;
+        }
     }
 
     /**
      * 是否是子类
      *
-     * @return 是否
+     * @return boolean
      */
     protected boolean isSonClass() {
         boolean result = false;
-        if (this.getClass().getSuperclass().getName().equalsIgnoreCase(DataBaseGenericService.class.getName()))
+        if (this.getClass().getSuperclass().getName().equalsIgnoreCase(DataBaseGenericService.class.getName())) {
             result = true;
+        }
         return result;
     }
 
 
     /**
-     * 获取默认表名
+     * 获取默认表名或视图名
      *
-     * @return 表名
+     * @param needView 是否需要返回视图名
+     * @return table|db.table
      */
     @Override
-    public String getTableName() {
+    public String getTableName(boolean needView) {
         String result = "";
         HttpServletRequest request = getRequest();
-        if (!isSonClass() && request != null)
+        if (!isSonClass() && request != null) {
             result = (String) request.getAttribute("tableName");
-        if (DBT.isNull(result) && DBT.isNotNull(this.tableName))
+        }
+        if (DBT.isNull(result) && DBT.isNotNull(this.tableName)) {
             result = this.tableName;
-        else {
+        } else {
             if (DBT.isNull(result)) {
                 String simpleName = this.getClass().getSimpleName();
-                if (simpleName.contains("ServiceImpl"))
+                if (simpleName.contains("ServiceImpl")) {
                     result = DBT.subString(simpleName, 0, simpleName.lastIndexOf("ServiceImpl"));
-                if (simpleName.contains("Impl"))
+                }
+                if (simpleName.contains("Impl")) {
                     result = DBT.subString(simpleName, 0, simpleName.lastIndexOf("Impl"));
+                }
             }
         }
-        if (DBT.isNotNull(result))
+        if (DBT.isNotNull(result)) {
             result = dealTableName(result);
-        else
+        } else {
             logger.error("common-db error: tableName is not config!! ");
-        return result;
+            result = "";
+        }
+        //table->v_table|db.table->db.v_table
+        return needView ? result.contains(".") ? result.replace(".", ".v_") : "v_" + result : result;
     }
 
 
     /**
      * 设置表名
      *
-     * @param tableName 表名
+     * @param tableName String
      */
     public void setTableName(String tableName) {
         this.tableName = tableName;
@@ -433,7 +485,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取默认主键名
      *
-     * @return 主键名
+     * @return String
      */
     @Override
     public String getKeyName() {
@@ -442,20 +494,22 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
         HttpServletRequest request = getRequest();
         if (!isSonClass() && request != null) {
             key = (String) request.getAttribute("keyName");
-            if (DBT.isNotNull(key))
+            if (DBT.isNotNull(key)) {
                 result = key;
+            }
         }
-        if (DBT.isNull(key) && DBT.isNotNull(this.keyName))
+        if (DBT.isNull(key) && DBT.isNotNull(this.keyName)) {
             result = this.keyName;
+        }
         return result;
     }
 
     /**
      * 设置排序
      *
-     * @param input           入参
-     * @param where           条件
-     * @param columnFullNames 字段全称
+     * @param input           Map
+     * @param where           Map
+     * @param columnFullNames Set
      */
     private void setOrder(Map<String, Object> input, Map<String, Object> where, Set<String> columnFullNames) {
         String orderBy = "";
@@ -470,11 +524,13 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                     if (columnFullNames != null && columnFullNames.size() > 0) {
                         for (String name : columnFullNames) {
                             if (groupColumn.contains(".")) {
-                                if (groupColumn.equalsIgnoreCase(name))
+                                if (groupColumn.equalsIgnoreCase(name)) {
                                     temp.add(name);
+                                }
                             } else {
-                                if (name.toLowerCase().contains("." + groupColumn.toLowerCase()))
+                                if (name.toLowerCase().contains("." + groupColumn.toLowerCase())) {
                                     temp.add(name);
+                                }
                             }
                         }
                     }
@@ -484,14 +540,15 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
         }
         if (where != null) {
             Object orderClause = Optional.ofNullable(where.get("orderClause")).orElse(where.get("orderBy"));
-            if (orderClause != null)
+            if (orderClause != null) {
                 orderBy = (String) orderClause;
-            else
+            } else {
                 orderBy = DataBaseRequestUtil.getOrderByClause(getRequest());
-        } else
+            }
+        } else {
             orderBy = DataBaseRequestUtil.getOrderByClause(getRequest());
+        }
         if (DBT.isNotNull(orderBy)) {
-            Set<String> columns = columnFullNames;
             for (String columnAndOrder : orderBy.split(",")) {
                 if (DBT.isNotNull(columnAndOrder)) {
                     columnAndOrder = columnAndOrder.trim();
@@ -499,44 +556,69 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                         String[] columnAndOrderArray = columnAndOrder.split(" ");
                         String column = columnAndOrderArray[0];
                         String order = columnAndOrderArray[1];
+                        String nullinfo = "";
                         if (order.equalsIgnoreCase("asc")
                                 || columnAndOrderArray[1].equalsIgnoreCase("desc")) {
                             if ((hasGroupByClause && dataBaseConfig.getGroupByAlia().equalsIgnoreCase(column))
-                                    || orderHasColumn(column, columns, hasGroupByClause))
-                                result.add(column + " " + order);
+                                    || orderHasColumn(column, columnFullNames, hasGroupByClause)) {
+                                if (columnAndOrderArray.length == 4) {
+                                    if (DataBasePlatform.postgres.name().equals(dataBaseConfig.getPlatform())
+                                            && "nulls".equalsIgnoreCase(columnAndOrderArray[2])
+                                            && ("last".equalsIgnoreCase(columnAndOrderArray[3]) || "first".equalsIgnoreCase(columnAndOrderArray[3]))) {
+                                        nullinfo = columnAndOrderArray[2] + " " + columnAndOrderArray[3];
+                                    } else if (DataBasePlatform.mysql.name().equals(dataBaseConfig.getPlatform()) && "is".equalsIgnoreCase(columnAndOrderArray[2])
+                                            && ("null".equalsIgnoreCase(columnAndOrderArray[3]))) {
+                                        nullinfo = columnAndOrderArray[2] + " " + columnAndOrderArray[3];
+                                    }
+                                    result.add(column + " " + order + " " + nullinfo);
+                                } else {
+                                    result.add(column + " " + order);
+                                }
+                            }
                         }
                     } else //只有字段名
                         if ((hasGroupByClause && dataBaseConfig.getGroupByAlia().equalsIgnoreCase(columnAndOrder))
-                                || orderHasColumn(columnAndOrder, columns, hasGroupByClause))
+                                || orderHasColumn(columnAndOrder, columnFullNames, hasGroupByClause)) {
                             result.add(columnAndOrder);
+                        }
                 }
             }
         }
         if (where != null) {//随机检索功能
             String randomClause = "";
-            Boolean random = Optional.ofNullable(Boolean.valueOf((String) where.get("random"))).orElse(false);
+            Object randomValue = where.get("random");
+            boolean random = false;
+            if (randomValue instanceof Boolean) {
+                random = Optional.of((Boolean) randomValue).orElse(false);
+            }
+            if (randomValue instanceof String) {
+                random = Optional.of(Boolean.valueOf((String) where.get("random"))).orElse(false);
+            }
             if (DataBasePlatform.postgres.name().equals(dataBaseConfig.getPlatform()) && random) {
                 randomClause = "random()";
             } else if (DataBasePlatform.mysql.name().equals(dataBaseConfig.getPlatform()) && random) {
                 randomClause = "rand()";
             }
+            where.remove("random");
             if (result.size() > 0) {
                 String orderClause = result.stream().collect(Collectors.joining(","));
-                if (DBT.isNotNull(randomClause))
+                if (DBT.isNotNull(randomClause)) {
                     orderClause += ("," + randomClause);
+                }
                 input.put("orderClause", orderClause);
-            } else if (DBT.isNotNull(randomClause))
+            } else if (DBT.isNotNull(randomClause)) {
                 input.put("orderClause", randomClause);
+            }
         }
     }
 
     /**
      * 排序语句是否包含字段
      *
-     * @param column           字段
-     * @param columns          字段列表
-     * @param hasGroupByClause
-     * @return 是否
+     * @param column           String
+     * @param columns          Set
+     * @param hasGroupByClause boolean
+     * @return boolean
      */
     private boolean orderHasColumn(String column, Set<String> columns, boolean hasGroupByClause) {
         boolean result = false;
@@ -544,28 +626,28 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
             if (columns != null && columns.size() > 0) {
                 for (String name : columns) {
                     if (column.contains(".")) {
-                        if (column.equalsIgnoreCase(name))
+                        if (column.equalsIgnoreCase(name)) {
                             result = true;
+                        }
                     } else {
-                        if (name.toLowerCase().contains("." + column.toLowerCase()))
+                        if (name.toLowerCase().contains("." + column.toLowerCase())) {
                             result = true;
+                        }
                     }
                 }
             }
             if (!result) {
                 Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
+                String info;
                 if (hasGroupByClause) {
-                    String info = "排序字段[" + column + "]在分组条件中不存在（请确认）";
-                    if (dataBaseConfig.isErrorWhere())
-                        throw new DataBaseDataBindingException(info);
-                    else
-                        logger.debug(info);
+                    info = "排序字段[" + column + "]在分组条件中不存在（请确认）";
                 } else {
-                    String info = "条件字段[" + column + "]不存在（请检查表名或字段名是否存在）";
-                    if (dataBaseConfig.isErrorWhere())
-                        throw new DataBaseDataBindingException(info);
-                    else
-                        logger.debug(info);
+                    info = "排序字段[" + column + "]不存在（请检查表名或字段名是否存在）";
+                }
+                if (dataBaseConfig.isErrorWhere()) {
+                    throw new DataBaseDataBindingException(info, null);
+                } else {
+                    logger.debug(info);
                 }
             }
         }
@@ -575,9 +657,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置分组
      *
-     * @param input           入参
-     * @param where           条件
-     * @param columnFullNames 字段全称
+     * @param input           Map
+     * @param where           Map
+     * @param columnFullNames Set
      */
     private void setGroupBy(Map<String, Object> input, Map<String, Object> where, Set<String> columnFullNames) {
         if (where != null) {
@@ -595,8 +677,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取分组
      *
-     * @param input 入参
-     * @return 分组
+     * @param input Map
+     * @return String
      */
     private String getGroupBy(Map<String, Object> input) {
         return Optional.ofNullable(input.get("groupByClause")).map(Object::toString).map(String::trim).orElse(null);
@@ -605,8 +687,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置分页
      *
-     * @param input 入参
-     * @param where 条件
+     * @param input Map
+     * @param where Map
      */
     private void setLimit(Map<String, Object> input, Map<String, Object> where) {
         if (where != null) {
@@ -623,7 +705,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                         try {
                             limit.put("start", Integer.valueOf(string));
                         } catch (NumberFormatException e) {
-                            throw new DataBaseDataBindingException("分页字段[start]格式应为数字，请确认");
+                            throw new DataBaseDataBindingException("分页字段[start]格式应为数字，请确认", e);
                         }
                     }
                 } else if (start instanceof Number) {
@@ -635,7 +717,7 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                         try {
                             limit.put("length", Integer.valueOf((String) length));
                         } catch (NumberFormatException e) {
-                            throw new DataBaseDataBindingException("分页字段[length]格式应为数字，请确认");
+                            throw new DataBaseDataBindingException("分页字段[length]格式应为数字，请确认", e);
                         }
                     }
                 } else if (length instanceof Number) {
@@ -649,71 +731,77 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 设置外键
      *
-     * @param input           入参
-     * @param columnFullNames 字段全称
+     * @param input           Map
+     * @param columnFullNames Set
+     * @param tableName       String
      */
-    private void setForgien(Map<String, Object> input, Set<String> columnFullNames) {
+    private void setForgien(Map<String, Object> input, Set<String> columnFullNames, String tableName) {
         StringBuilder columns = new StringBuilder();
         String deafultPlatform = Optional.ofNullable(dataBaseConfig).map(DataBaseConfig::getPlatform).orElse("");
         if (getForginTableName() != null && getForginKeyName() != null && getForginTableKeyName() != null) {
-            input.put("forginKeyName", dealColumnNames(getForginKeyName(), null, columnFullNames));
+            input.put("forginKeyName", dealColumnNames(getForginKeyName(), null, columnFullNames, tableName));
             input.put("forginTableName", dealTableNames(getForginTableName()));
-            input.put("forginTableKeyName", dealColumnNames(getForginTableKeyName(), getForginTableName(), columnFullNames));
+            input.put("forginTableKeyName", dealColumnNames(getForginTableKeyName(), getForginTableName(), columnFullNames, tableName));
         }
-        columns.append(Optional.ofNullable(columnFullNames).map(list -> list.stream().
-                map(columName -> {
-                    columName = DBT.getColumnName(columName);
-                    String result = columName;
-                    String[] split = columName.split("\\.");
-                    if (split.length == 1) {
-                        split = ("." + columName).split("\\.");
-                    }
-                    String tableName = getTableName();
-                    String[] splitTableName = tableName.split("\\.");
-                    if (splitTableName.length == 2 && splitTableName[1].equalsIgnoreCase(split[0])
-                            || splitTableName.length == 1 && tableName.equalsIgnoreCase(split[0])) {
+        columns.append(Optional.ofNullable(columnFullNames).map(list -> list.stream().map(columName -> {//处理字段名
+            String result = columName;
+            columName = DBT.getColumnName(columName);
+            String[] split = columName.split("\\.");
+            if (split.length == 1) {//没有.
+                split = ("." + columName).split("\\.");
+            }
+            String[] splitTableName = tableName.split("\\.");
+            if (splitTableName.length == 2 && splitTableName[1].equalsIgnoreCase(split[0])
+                    || splitTableName.length == 1 && tableName.equalsIgnoreCase(split[0])) {
+                if (DataBasePlatform.sqlserver.name().equals(deafultPlatform)) {
+                    result = "[" + split[0] + "]" + "." + split[1];//[表名].字段名
+                } else {
+                    result = columName;
+                }
+            }
+            String[] forginTableNames = getForginTableName();
+            if (forginTableNames != null) {
+                for (String forginTableName : forginTableNames) {
+                    String[] splitForginTableName = forginTableName.split("\\.");
+                    if (splitForginTableName.length == 2 && splitForginTableName[1].equalsIgnoreCase(split[0])
+                            || splitForginTableName.length == 1 && forginTableName.equalsIgnoreCase(split[0])) {
                         if (DataBasePlatform.sqlserver.name().equals(deafultPlatform)) {
-                            result = "[" + split[0] + "]" + "." + split[1];
+                            return "[" + split[0] + "]" + "." + split[1] + " as " + split[0] + "_" + split[1];//[表名].字段名 as 表名_字段名
                         } else {
-                            result = columName;
+                            return columName + " as " + split[0] + "_" + split[1]; //字段名 as 表名_字段名
                         }
                     }
-                    String[] forginTableNames = getForginTableName();
-                    if (forginTableNames != null) {
-                        for (String forginTableName : forginTableNames) {
-                            String[] splitForginTableName = forginTableName.split("\\.");
-                            if (splitForginTableName.length == 2 && splitForginTableName[1].equalsIgnoreCase(split[0])
-                                    || splitForginTableName.length == 1 && forginTableName.equalsIgnoreCase(split[0])) {
-                                if (DataBasePlatform.sqlserver.name().equals(deafultPlatform)) {
-                                    return "[" + split[0] + "]" + "." + split[1] + " as " + split[0] + "_" + split[1];
-                                } else {
-                                    return columName + " as " + split[0] + "_" + split[1];
-                                }
-                            }
-                        }
-                    }
-                    return result;
-                }).collect(Collectors.joining(","))).orElse(""));
+                }
+            }
+            return result;
+        }).collect(Collectors.joining(","))).orElse(""));
         input.put("columns", columns.toString());
         input.put("columnWithTypes", columnFullNames);
     }
 
+    @Override
+    public List<String> getColumnList(boolean needView) {
+        return getColumnsFromDB(getTableName(needView));
+    }
+
     /**
      * 获取字段列表
+     *
+     * @param tableName String
+     * @return Set {'table.id::int',''table.name::varchar''}
      */
-    private Set<String> getColumns() {
+    private Set<String> getColumns(String tableName) {
         Set<String> columnFullNames = new HashSet<>();
-        String[] tableNameInfo = getTableName().split("\\.");
+        String[] tableNameInfo = tableName.split("\\.");
         if (tableNameInfo.length != 2) {
-            tableNameInfo = ("." + getTableName()).split("\\.");
+            tableNameInfo = ("." + tableName).split("\\.");
         }
         //获取主表字段
         if (tableNameInfo.length == 2) {
-            String[] finalTableNameInfo = tableNameInfo;
-            List<String> columnsFromDB = getColumnsFromDB(getTableName());
+            List<String> columnsFromDB = getColumnsFromDB(tableName);
             if (columnsFromDB != null) {
                 for (String columName : columnsFromDB) {
-                    columnFullNames.add(finalTableNameInfo[1] + "." + columName);
+                    columnFullNames.add(tableNameInfo[1] + "." + columName);
                 }
             }
         }
@@ -725,11 +813,10 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                     tableInfo = ("." + forginTableNameInfo).split("\\.");
                 }
                 if (tableInfo.length == 2) {
-                    String[] finalTableInfo = tableInfo;
                     List<String> columnsFromDB = getColumnsFromDB(forginTableNameInfo);
                     if (columnsFromDB != null) {
                         for (String columName : columnsFromDB) {
-                            columnFullNames.add(finalTableInfo[1] + "." + columName);
+                            columnFullNames.add(tableInfo[1] + "." + columName);
                         }
                     }
                 }
@@ -741,8 +828,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 移除非法字段
      *
-     * @param where
-     * @return
+     * @param where           Map
+     * @param columnFullNames Set
+     * @return Map
      */
     private Map<String, Object> dealWhere(Map<String, Object> where, Set<String> columnFullNames) {
         Map<String, Object> result = new HashMap<>();
@@ -754,8 +842,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                     if (DataBasePlatform.postgres.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {//需要转型
                         if (value instanceof String && DBT.isNotNull(value.toString()) && DataBaseValue.containsOperator(value.toString())) {//前端传入转型语句
                             ClauseValue clauseValue = DataBaseValue.dealValueClause(value.toString());
-                            if (clauseValue != null)
+                            if (clauseValue != null) {
                                 value = clauseValue;
+                            }
                         } else if (value instanceof String && DBT.isNotNull(value.toString())) {//前端没传入转型语句
                             String columnType = getColumnType(whereClumnName, columnFullNames);
                             if (DBT.isNotNull(columnType)) {
@@ -785,6 +874,15 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                                 }
                             }};
                         }
+                    }
+                    if (value instanceof List) {//防止注入转成ClauseValue
+                        List finalValue = (List) value;
+                        value = new ClauseValue() {{
+                            if (DataBaseOperator._not_in.getOperator().equalsIgnoreCase(DataBaseOperator.getOperator(whereClumnName))
+                                    || DataBaseOperator._in.getOperator().equalsIgnoreCase(DataBaseOperator.getOperator(whereClumnName))) {
+                                setValueList(finalValue);
+                            }
+                        }};
                     }
                     if (whereClumnName.equalsIgnoreCase("alias") ||
                             whereClumnName.equalsIgnoreCase("userFullNames") ||
@@ -829,43 +927,50 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 是否包含字段
      *
-     * @param input
-     * @param columns
-     * @return
+     * @param column  String
+     * @param columns Set
+     * @return boolean
      */
-    private boolean containsColumn(String input, Set<String> columns) {
+    private boolean containsColumn(String column, Set<String> columns) {
         boolean result = false;
         int columnNum = 0;
-        if (DBT.isNotNull(input)) {
-            String[] realColumns = DataBaseOperator.getRealColumn(input).split(DataBaseOperator._or_);
+        if (DBT.isNotNull(column)) {
+            String[] realColumns = DataBaseOperator.getRealColumn(column).split(DataBaseOperator._or_);
             for (String realColumn : realColumns) {
+                realColumn = realColumn.toLowerCase();
                 int num = 0;
                 for (String clumnName : columns) {
                     clumnName = DBT.getColumnName(clumnName);
-                    if (DBT.isNotNull(clumnName))
+                    if (DBT.isNotNull(clumnName)) {
                         clumnName = clumnName.toLowerCase();
-                    boolean flag = false;
-                    if (realColumn.contains(".")) {//table.column
-                        if (clumnName.equalsIgnoreCase(realColumn))
-                            flag = true;
-                    } else {
-                        if (clumnName.substring(clumnName.indexOf(".") < 0 ? 0 : clumnName.indexOf(".")).equalsIgnoreCase("." + realColumn.toLowerCase()))
-                            flag = true;
                     }
-                    if (flag)
+                    boolean flag = false;
+                    if (realColumn.contains(".")) {//table.column|db.table.column
+                        if (realColumn.endsWith(clumnName)) {
+                            flag = true;
+                        }
+                    } else {
+                        if (clumnName.substring(!clumnName.contains(".") ? 0 : clumnName.indexOf(".")).equalsIgnoreCase("." + realColumn.toLowerCase())) {
+                            flag = true;
+                        }
+                    }
+                    if (flag) {
                         num++;
+                    }
                 }
-                if (num >= 2)//字段重复
-                    throw new DataBaseDataBindingException("条件字段[" + realColumn + "]重复（尝试添加表名作为前缀）");
-                else if (num == 1)
+                if (num >= 2) {//字段重复
+                    Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
+                    throw new DataBaseDataBindingException("条件字段[" + realColumn + "]重复（尝试添加表名作为前缀）", null);
+                } else if (num == 1) {
                     columnNum++;
-                else {
+                } else {
                     Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
                     String info = "条件字段[" + realColumn + "]不存在（请检查表名或字段名是否存在）";
-                    if (dataBaseConfig.isErrorWhere())
-                        throw new DataBaseDataBindingException(info);
-                    else
+                    if (dataBaseConfig.isErrorWhere()) {
+                        throw new DataBaseDataBindingException(info, null);
+                    } else {
                         logger.debug(info);
+                    }
                 }
             }
             if (columnNum == realColumns.length) {
@@ -878,9 +983,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 获取字段类型
      *
-     * @param input
-     * @param columns
-     * @return
+     * @param input   String
+     * @param columns Set
+     * @return String
      */
     private String getColumnType(String input, Set<String> columns) {
         String result = "";
@@ -892,14 +997,17 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                     //continue;
                 }
                 clumnName = DBT.getColumnName(clumnName);
-                if (DBT.isNotNull(clumnName))
+                if (DBT.isNotNull(clumnName)) {
                     clumnName = clumnName.toLowerCase();
+                }
                 if (realColumn.contains(".")) {//table.column
-                    if (clumnName.equalsIgnoreCase(realColumn))
+                    if (clumnName.equalsIgnoreCase(realColumn)) {
                         result = clumnType;
+                    }
                 } else {
-                    if (clumnName.substring(clumnName.indexOf(".") < 0 ? 0 : clumnName.indexOf(".")).equalsIgnoreCase("." + realColumn.toLowerCase()))
+                    if (clumnName.substring(!clumnName.contains(".") ? 0 : clumnName.indexOf(".")).equalsIgnoreCase("." + realColumn.toLowerCase())) {
                         result = clumnType;
+                    }
                 }
             }
         }
@@ -922,8 +1030,8 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 向Map设置自动生成的主键
      *
-     * @param record 记录
-     * @param input  参数
+     * @param record Map
+     * @param input  Map
      */
     private void setGeneratedMapKey(Map record, Map<String, Object> input) {
         record.put(getKeyName(), input.get("generatedKey"));
@@ -932,9 +1040,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 向Bean设置自动生成的主键
      *
-     * @param record 记录
-     * @param input  参数
-     * @param clazz  类
+     * @param record Entity
+     * @param input  Map
+     * @param clazz  Class
      */
     private void setGeneratedClazzKey(Entity record, Map<String, Object> input, Class<Entity> clazz) {
         if (Map.class.getName().equalsIgnoreCase(clazz.getName())) {
@@ -949,53 +1057,51 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 移除不存在的列对应的Key
      *
-     * @param values Map<String, Object>
+     * @param values Map
      * @return Map
      */
     private Map<String, Object> removeRedundantCode(Map<String, Object> values) {
         if (values == null) {
             return null;
         }
-
-        Map<String, Object> valuesToDeal = new HashMap<String, Object>();
-        List<String> columns = getColumnsFromDB(getTableName());
+        String tableName = getTableName(false);
+        Map<String, Object> valuesToDeal = new HashMap<>();
+        List<String> columns = getColumnsFromDB(tableName);
         for (String column : columns) {
-            if (values != null) {
-                column = DBT.getColumnName(column);
-                Set<String> keys = values.keySet();
-                String columnKey = null;
-                for (String key : keys) {
-                    if (key != null && key.equalsIgnoreCase(column)) {
-                        columnKey = key;
-                    }
+            column = DBT.getColumnName(column);
+            Set<String> keys = values.keySet();
+            String columnKey = null;
+            for (String key : keys) {
+                if (key != null && key.equalsIgnoreCase(column)) {
+                    columnKey = key;
                 }
-                if (DBT.isNotNull(columnKey)) {
-                    Object value = values.get(columnKey);
-                    if (DataBasePlatform.postgres.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {//需要转型
-                        if (value instanceof String && DBT.isNotNull(value.toString())) {
-                            String columnType = getColumnType(column, getColumns());
-                            if (DBT.isNotNull(columnType)) {
-                                String finalValue = value.toString();
-                                value = new ClauseValue() {{
-                                    setOriginal(finalValue);
-                                    setValue(finalValue);
-                                    setOperator(DataBaseValue.doublue_colon.getOperator() + columnType);
-                                }};
-                            }
+            }
+            if (DBT.isNotNull(columnKey)) {
+                Object value = values.get(columnKey);
+                if (DataBasePlatform.postgres.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {//需要转型
+                    if (value instanceof String && DBT.isNotNull(value.toString())) {
+                        String columnType = getColumnType(column, getColumns(tableName));
+                        if (DBT.isNotNull(columnType)) {
+                            String finalValue = value.toString();
+                            value = new ClauseValue() {{
+                                setOriginal(finalValue);
+                                setValue(finalValue);
+                                setOperator(DataBaseValue.doublue_colon.getOperator() + columnType);
+                            }};
                         }
                     }
-                    valuesToDeal.put(columnKey, value);
                 }
+                valuesToDeal.put(columnKey, value);
             }
         }
         return valuesToDeal;
     }
 
     /**
-     * 从数据库获取表字段信息
+     * 从数据库获取表字段信息(columnname::columntype)
      *
-     * @param tableInfo 表信息
-     * @return 字段列表
+     * @param tableInfo String
+     * @return List
      */
     protected List<String> getColumnsFromDB(String tableInfo) {
         List<String> result = new ArrayList<>();
@@ -1009,37 +1115,43 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
             result = getMapper().columns(table, schema);
             if (result == null || result.size() <= 0) {
                 Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
-                throw new DataBaseDataBindingException("[" + schema + "].[" + table + "]表不存在（或者表中不存在字段）");
+                throw new DataBaseDataBindingException("[" + schema + "].[" + table + "]表不存在（或者表中不存在字段）", null);
             }
         }
         String columnCase = dataBaseConfig.getColumnCase();
-        if (DBT.isNotNull(columnCase))
-            if (columnCase.contains("l"))
+        if (DBT.isNotNull(columnCase)) {
+            if (columnCase.contains("l")) {
                 return result.stream().map(String::toLowerCase).collect(Collectors.toList());
-            else
+            } else {
                 return result.stream().map(String::toUpperCase).collect(Collectors.toList());
-        else
+            }
+        } else {
             return result;
+        }
     }
 
     /**
      * 处理表名和库名
      *
-     * @param tableName 待处理表名
-     * @return 表名
+     * @param tableName String
+     * @return String
      */
     private String dealTableName(String tableName) {
         if (DBT.isNotNull(tableName)) {
             if (!tableName.contains(".")) {
                 if (DataBasePlatform.mysql.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {
                     //mysql默认加上库前缀
-                    tableName = dataBaseConfig.getDeafultDb() + "." + tableName;
+                    if (DBT.isNotNull(dataBaseConfig.getDeafultDb()))
+                        tableName = dataBaseConfig.getDeafultDb() + "." + tableName;
                 } else if (DataBasePlatform.postgres.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {
                     //postgres默认不加
                 } else if (DataBasePlatform.sqlserver.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {
                     //sqlserver默认不加
+                } else if (DataBasePlatform.sqlite.name().equalsIgnoreCase(dataBaseConfig.getPlatform())) {
+                    //sqlite默认不加
                 } else {
-                    tableName = dataBaseConfig.getDeafultDb() + "." + tableName;
+                    if (DBT.isNotNull(dataBaseConfig.getDeafultDb()))
+                        tableName = dataBaseConfig.getDeafultDb() + "." + tableName;
                 }
             }
         }
@@ -1049,28 +1161,27 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 批量处理表名和库名
      *
-     * @param tableNames 待处理表名数组
-     * @return 表名数组
+     * @param tableNames String[]
+     * @return String[]
      */
     private String[] dealTableNames(String[] tableNames) {
         List<String> result = new ArrayList<>();
         for (String name : tableNames) {
             result.add(dealTableName(name));
         }
-        return result.toArray(new String[result.size()]);
+        return result.toArray(new String[0]);
     }
 
     /**
-     * 处理字段名
+     * 处理字段名，不存在则抛异常
      *
-     * @param columnName      待处理字段名
-     * @param tableInfo       表信息
-     * @param columnFullNames 字段全称集合
-     * @return 字段名
+     * @param columnName      String
+     * @param tableInfo       String
+     * @param columnFullNames Set
+     * @return 入参columnName
      */
     private String dealColumnName(String columnName, String tableInfo, Set<String> columnFullNames) {
         boolean flag = false;
-        tableInfo = Optional.ofNullable(tableInfo).orElse(getTableName());
         if (DBT.isNotNull(columnName)) {
             for (String name : columnFullNames) {
                 name = DBT.getColumnName(name);
@@ -1087,8 +1198,9 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
                 }
             }
         }
-        if (flag == false) {
-            throw new DataBaseDataBindingException("表[" + tableInfo + "]中字段[" + columnName + "]不存在");
+        if (!flag) {
+            Optional.ofNullable((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class)).ifPresent(cache -> cache.clear(DataBaseMapper.CACHE_COLUMNS_NAME));
+            throw new DataBaseDataBindingException("表[" + tableInfo + "]中字段[" + columnName + "]不存在", null);
         }
         return columnName;
     }
@@ -1096,23 +1208,23 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     /**
      * 处理字段名
      *
-     * @param columnNames     待处理字段名数组
-     * @param tableInfo       表信息数组
-     * @param columnFullNames 字段全称集合
-     * @return 字段名数组
+     * @param columnNames     String[]
+     * @param tableInfo       String
+     * @param columnFullNames Set
+     * @return 入参columnNames
      */
-    private String[] dealColumnNames(String[] columnNames, String[] tableInfo, Set<String> columnFullNames) {
+    private String[] dealColumnNames(String[] columnNames, String[] tableInfo, Set<String> columnFullNames, String tableName) {
         List<String> result = new ArrayList<>();
         if (columnNames != null) {
             for (int i = 0; i < columnNames.length; i++) {
                 if (tableInfo == null) {
-                    result.add(dealColumnName(columnNames[i], getTableName(), columnFullNames));
+                    result.add(dealColumnName(columnNames[i], tableName, columnFullNames));
                 } else {
                     result.add(dealColumnName(columnNames[i], tableInfo[i], columnFullNames));
                 }
             }
         }
-        return result.toArray(new String[result.size()]);
+        return result.toArray(new String[0]);
     }
 
 
@@ -1122,10 +1234,11 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
 
     public String[] getForginKeyName() {
         HttpServletRequest request = getRequest();
-        if (!isSonClass() && request != null && request.getAttribute("tableName") != null)
+        if (!isSonClass() && request != null && request.getAttribute("tableName") != null) {
             return (String[]) request.getAttribute("forginKeyName");
-        else
+        } else {
             return forginKeyName;
+        }
     }
 
     public void setForginKeyName(String[] forginKeyName) {
@@ -1135,10 +1248,12 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
     public String[] getForginTableName() {
         HttpServletRequest request = getRequest();
         String[] result = forginTableName;
-        if (!isSonClass() && request != null && request.getAttribute("tableName") != null)
+        if (!isSonClass() && request != null && request.getAttribute("tableName") != null) {
             result = (String[]) request.getAttribute("forginTableName");
-        if (result != null)
-            result = Arrays.stream(result).map(name -> dealTableName(name)).collect(Collectors.toList()).toArray(result);
+        }
+        if (result != null) {
+            result = Arrays.stream(result).map(this::dealTableName).collect(Collectors.toList()).toArray(result);
+        }
         return result;
     }
 
@@ -1148,13 +1263,19 @@ public class DataBaseGenericService<Entity, Query> implements IDataBaseGenericSe
 
     public String[] getForginTableKeyName() {
         HttpServletRequest request = getRequest();
-        if (!isSonClass() && request != null && request.getAttribute("tableName") != null)
+        if (!isSonClass() && request != null && request.getAttribute("tableName") != null) {
             return (String[]) request.getAttribute("forginTableKeyName");
-        else
+        } else {
             return forginTableKeyName;
+        }
     }
 
     public void setForginTableKeyName(String[] forginTableKeyName) {
         this.forginTableKeyName = forginTableKeyName;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

@@ -13,7 +13,7 @@ public abstract class DataBaseCacheCtr {
     private IDataBaseCache dataBaseCache;
 
     private IDataBaseCache getService() {
-        return Optional.ofNullable(dataBaseCache).orElse((IDataBaseCache) DataBaseSpringUtil.getBean(IDataBaseCache.class));
+        return Optional.ofNullable(dataBaseCache).orElse(DataBaseSpringUtil.getBean(IDataBaseCache.class));
     }
 
     @GetMapping(value = {""})

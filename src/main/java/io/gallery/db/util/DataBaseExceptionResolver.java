@@ -9,7 +9,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.DataBindingException;
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Optional;
@@ -26,13 +25,12 @@ public class DataBaseExceptionResolver implements HandlerExceptionResolver {
     /**
      * 处理Ajax请求错误
      *
-     * @param request HttpServletRequest
+     * @param request  HttpServletRequest
      * @param response HttpServletResponse
-     * @param e Exception
+     * @param e        Exception
      */
     protected void dealAjax(HttpServletRequest request, HttpServletResponse response, Exception e) {
-        // 判断是否Ajax请求
-        if (DataBaseRequestUtil.isAjax(request)) {
+        if (DataBaseRequestUtil.isAjax(request)) {// 判断是否Ajax请求
             try {
                 response.setContentType("text/html;charset=UTF-8");
                 response.setCharacterEncoding("UTF-8");
@@ -40,7 +38,7 @@ public class DataBaseExceptionResolver implements HandlerExceptionResolver {
                 writer.write(JSON.toJSONString(new LinkedHashMap<String, Object>() {{
                     put("success", false);
                     put("message", e.getMessage());
-                    if (e instanceof DataBindingException) {
+                    if (e instanceof DataBaseDataBindingException) {
                         DataBaseDataBindingException dbe = (DataBaseDataBindingException) e;
                         Optional.ofNullable(dbe.getFieldErrors()).ifPresent(errors -> put("fieldErrors", dbe.getFieldErrors()));
                         Optional.ofNullable(dbe.getGlobalErrors()).ifPresent(errors -> put("globalErrors", dbe.getGlobalErrors()));

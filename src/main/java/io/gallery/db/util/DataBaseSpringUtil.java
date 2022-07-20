@@ -20,7 +20,9 @@ public class DataBaseSpringUtil implements ApplicationContextAware {
     }
 
     public static Object getBean(String name) {
-        if (DBT.isNull(name)) return null;
+        if (DBT.isNull(name)) {
+            return null;
+        }
         try {
             return Optional.ofNullable(applicationContext).map(context -> context.getBean(name)).orElse(null);
         } catch (Exception e) {
@@ -28,9 +30,9 @@ public class DataBaseSpringUtil implements ApplicationContextAware {
         }
     }
 
-    public static <T> Object getBean(Class clazz) {
+    public static <T> T getBean(Class clazz) {
         try {
-            return Optional.ofNullable(applicationContext).map(context -> context.getBean(clazz)).orElse(null);
+            return (T) Optional.ofNullable(applicationContext).map(context -> context.getBean(clazz)).orElse(null);
         } catch (Exception e) {
             return null;
         }

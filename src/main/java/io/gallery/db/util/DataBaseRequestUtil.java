@@ -15,7 +15,7 @@ public class DataBaseRequestUtil {
      * 设置排序条件
      *
      * @param request HttpServletRequest
-     * @return 字符串
+     * @return String
      */
     public static String getOrderByClause(HttpServletRequest request) {
         String setOrderClause = null;
@@ -39,7 +39,7 @@ public class DataBaseRequestUtil {
      *
      * @param request     HttpServletRequest
      * @param additionnal 追加排序
-     * @return 字符串
+     * @return String
      */
     public static String getOrderByClause(HttpServletRequest request, String additionnal) {
         String setOrderClause = getOrderByClause(request);
@@ -51,17 +51,16 @@ public class DataBaseRequestUtil {
         return setOrderClause;
     }
 
-
     /**
      * 获取请求参数
      *
      * @param request HttpServletRequest
-     * @param name    名称
-     * @return 字符串
+     * @param name    String
+     * @return Optional
      */
     public static Optional<String> get(HttpServletRequest request, String name) {
         return Optional.ofNullable(request).map(r -> {
-            Map<String, String> map = new LinkedHashMap(r.getParameterMap());
+            Map map = new LinkedHashMap(r.getParameterMap());
             Object result = map.getOrDefault(name, null);
             if (result != null) {
                 return ((String[]) result)[0];
@@ -75,10 +74,10 @@ public class DataBaseRequestUtil {
      * 是否是ajax请求
      *
      * @param request HttpServletRequest
-     * @return 是否
+     * @return boolean
      */
     public static boolean isAjax(HttpServletRequest request) {
-        return (request.getHeader("X-Requested-With") != null && "XMLHttpRequest".equals(request.getHeader("X-Requested-With").toString()));
+        return (request.getHeader("X-Requested-With") != null && "XMLHttpRequest".equals(request.getHeader("X-Requested-With")));
     }
 
 }

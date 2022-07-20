@@ -22,7 +22,7 @@ public class RedisUtil {
      *
      * @param key  键
      * @param time 时间(秒)
-     * @return 是否
+     * @return boolean
      */
     public static boolean expire(String key, long time) {
         try {
@@ -64,8 +64,8 @@ public class RedisUtil {
     /**
      * 获取Key
      *
-     * @param pattern 正则
-     * @return 集合
+     * @param pattern String
+     * @return Set
      */
     public static Set<String> keys(String pattern) {
         try {
@@ -81,7 +81,6 @@ public class RedisUtil {
      *
      * @param key 可以传一个值 或多个
      */
-    @SuppressWarnings("unchecked")
     public static void del(String... key) {
         if (key != null && key.length > 0) {
             if (key.length == 1) {
@@ -108,11 +107,13 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return 是否
+     * @return boolean
      */
     public static boolean set(String key, Object value) {
         try {
-            if (value == null) return false;
+            if (value == null) {
+                return false;
+            }
             getRedisTemplate().opsForValue().set(key, value);
             return true;
         } catch (Exception e) {
@@ -127,12 +128,14 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return true 成功 false 失败
+     * @return boolean
      */
     public static boolean set(String key, Object value, long time) {
         try {
             if (time > 0) {
-                if (value == null) return false;
+                if (value == null) {
+                    return false;
+                }
                 getRedisTemplate().opsForValue().set(key, value, time, TimeUnit.SECONDS);
             } else {
                 set(key, value);
@@ -149,7 +152,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param delta 要增加几(大于0)
-     * @return 数字
+     * @return long
      */
     public static long incr(String key, long delta) {
         if (delta < 0) {
@@ -163,7 +166,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param delta 要减少几(小于0)
-     * @return 数字
+     * @return long
      */
     public static long decr(String key, long delta) {
         if (delta < 0) {
@@ -178,7 +181,7 @@ public class RedisUtil {
      *
      * @param key  键 不能为null
      * @param item 项 不能为null
-     * @return Object
+     * @return 值
      */
     public static Object hget(String key, String item) {
         return getRedisTemplate().opsForHash().get(key, item);
@@ -188,7 +191,7 @@ public class RedisUtil {
      * 获取hashKey对应的所有键值
      *
      * @param key 键
-     * @return Map
+     * @return 对应的多个键值
      */
     public static Map<Object, Object> hmget(String key) {
         return getRedisTemplate().opsForHash().entries(key);
@@ -322,7 +325,7 @@ public class RedisUtil {
      * 根据key获取Set中的所有值
      *
      * @param key 键
-     * @return 集合
+     * @return Set
      */
     public static Set<Object> sGet(String key) {
         try {
@@ -390,7 +393,7 @@ public class RedisUtil {
      * 获取set缓存的长度
      *
      * @param key 键
-     * @return 数字
+     * @return long
      */
     public static long sGetSetSize(String key) {
         try {
@@ -410,8 +413,7 @@ public class RedisUtil {
      */
     public static long setRemove(String key, Object... values) {
         try {
-            Long count = getRedisTemplate().opsForSet().remove(key, values);
-            return count;
+            return getRedisTemplate().opsForSet().remove(key, values);
         } catch (Exception e) {
             logger.error("setRemove [" + key + "] fail: " + e.getMessage(), e.getCause());
             return 0;
@@ -425,7 +427,7 @@ public class RedisUtil {
      * @param key   键
      * @param start 开始
      * @param end   结束 0 到 -1代表所有值
-     * @return 列表
+     * @return List
      */
     public static List<Object> lGet(String key, long start, long end) {
         try {
@@ -440,7 +442,7 @@ public class RedisUtil {
      * 获取list缓存的长度
      *
      * @param key 键
-     * @return 数字
+     * @return long
      */
     public static long lGetListSize(String key) {
         try {
@@ -472,7 +474,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return true 成功 false失败
+     * @return boolean
      */
     public static boolean lSet(String key, Object value) {
         try {
@@ -490,13 +492,14 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return true 成功 false失败
+     * @return boolean
      */
     public static boolean lSet(String key, Object value, long time) {
         try {
             getRedisTemplate().opsForList().rightPush(key, value);
-            if (time > 0)
+            if (time > 0) {
                 expire(key, time);
+            }
             return true;
         } catch (Exception e) {
             logger.error("lSet [" + key + "] with expire [" + time + "] fail: " + e.getMessage(), e.getCause());
@@ -509,7 +512,7 @@ public class RedisUtil {
      *
      * @param key   键
      * @param value 值
-     * @return true 成功 false失败
+     * @return boolean
      */
     public static boolean lSet(String key, List<Object> value) {
         try {
@@ -527,7 +530,7 @@ public class RedisUtil {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return true 成功 false失败
+     * @return boolean
      */
     public static boolean lSet(String key, List<Object> value, long time) {
         try {
@@ -548,7 +551,7 @@ public class RedisUtil {
      * @param key   键
      * @param index 索引
      * @param value 值
-     * @return true 成功 false失败
+     * @return boolean
      */
     public static boolean lUpdateIndex(String key, long index, Object value) {
         try {
@@ -570,8 +573,7 @@ public class RedisUtil {
      */
     public static long lRemove(String key, long count, Object value) {
         try {
-            Long remove = getRedisTemplate().opsForList().remove(key, count, value);
-            return remove;
+            return getRedisTemplate().opsForList().remove(key, count, value);
         } catch (Exception e) {
             logger.error("lRemove [" + key + "] fail: " + e.getMessage(), e.getCause());
             return 0;

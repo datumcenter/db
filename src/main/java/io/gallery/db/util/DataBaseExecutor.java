@@ -10,8 +10,9 @@ public class DataBaseExecutor {
     private static ExecutorService cachedThreadPool;
 
     public static ExecutorService getService() {
-        if (cachedThreadPool == null)
+        if (cachedThreadPool == null) {
             cachedThreadPool = Executors.newCachedThreadPool();
+        }
         return cachedThreadPool;
     }
 }

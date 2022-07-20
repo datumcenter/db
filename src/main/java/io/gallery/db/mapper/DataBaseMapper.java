@@ -22,8 +22,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 新增记录
      *
-     * @param record 记录
-     * @return 生效条数
+     * @param record Entity
+     * @return int
      */
     @Transactional
     @InsertProvider(type = DataBaseProvider.class, method = "insert")
@@ -33,8 +33,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 根据主键删除记录
      *
-     * @param input 条件
-     * @return 生效条数
+     * @param input Map
+     * @return int
      */
     @Transactional
     @DeleteProvider(type = DataBaseProvider.class, method = "delete")
@@ -43,8 +43,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 根据条件删除记录
      *
-     * @param input 条件
-     * @return 生效条数
+     * @param input Map
+     * @return int
      */
     @Transactional
     @DeleteProvider(type = DataBaseProvider.class, method = "deleteByParams")
@@ -53,26 +53,17 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 根据主键更新记录
      *
-     * @param record 记录
-     * @return 生效条数
+     * @param record Entity
+     * @return int
      */
     @Transactional
     @UpdateProvider(type = DataBaseProvider.class, method = "update")
     int update(Entity record);
 
     /**
-     * 根据主键获取记录
-     *
-     * @param input 条件
-     * @return 实体类
-     */
-    @SelectProvider(type = DataBaseProvider.class, method = "get")
-    LinkedHashMap get(Map<String, Object> input);
-
-    /**
      * 根据条件获取列表
      *
-     * @param input 条件
+     * @param input Map
      * @return 实体类列表
      */
     @SelectProvider(type = DataBaseProvider.class, method = "select")
@@ -81,7 +72,7 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 根据条件获取第一条记录
      *
-     * @param input 条件
+     * @param input Map
      * @return 实体类
      */
     @SelectProvider(type = DataBaseProvider.class, method = "selectOne")
@@ -90,8 +81,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 根据条件获取数量
      *
-     * @param input 条件
-     * @return 记录条数
+     * @param input Map
+     * @return long
      */
     @SelectProvider(type = DataBaseProvider.class, method = "count")
     long count(Map<String, Object> input);
@@ -105,10 +96,10 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     Example setCondition(Query query);
 
     /**
-     * 获取字段列表
+     * 获取字段列表(columnname::columntype)
      *
-     * @param table  表名
-     * @param schema 库名
+     * @param table  String
+     * @param schema String
      * @return 列表
      */
     @Cacheable(cacheNames = {CACHE_COLUMNS_NAME})
@@ -118,8 +109,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param sql 自定义SQL
-     * @return 列表
+     * @param sql String
+     * @return List
      */
     @SelectProvider(type = DataBaseProvider.class, method = "execute")
     List<HashMap> execute(String sql);
@@ -127,8 +118,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param sql 自定义SQL
-     * @return 条数
+     * @param sql String
+     * @return long
      */
     @SelectProvider(type = DataBaseProvider.class, method = "execute")
     long executeCount(String sql);
@@ -136,8 +127,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param sql 自定义SQL
-     * @return 记录
+     * @param sql String
+     * @return LinkedHashMap
      */
     @SelectProvider(type = DataBaseProvider.class, method = "execute")
     LinkedHashMap executeOne(String sql);
@@ -145,8 +136,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param params 参数
-     * @return 列表
+     * @param params Map
+     * @return List
      */
     @SelectProvider(type = DataBaseProvider.class, method = "executeWithParams")
     List<LinkedHashMap> executeWithParams(Map<String, Object> params);
@@ -154,8 +145,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param params 参数
-     * @return 记录
+     * @param params Map
+     * @return LinkedHashMap
      */
     @SelectProvider(type = DataBaseProvider.class, method = "executeWithParams")
     LinkedHashMap executeWithParamsOne(Map<String, Object> params);
@@ -163,8 +154,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param params 参数
-     * @return 条数
+     * @param params Map
+     * @return long
      */
     @SelectProvider(type = DataBaseProvider.class, method = "executeWithParams")
     long executeWithParamsCount(Map<String, Object> params);
@@ -172,8 +163,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param params 参数
-     * @return 生效条数
+     * @param params Map
+     * @return int
      */
     @UpdateProvider(type = DataBaseProvider.class, method = "executeWithParams")
     int executeInsertOrUpdate(Map<String, Object> params);
@@ -181,7 +172,7 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param sql 自定义SQL
+     * @param sql String
      */
     @UpdateProvider(type = DataBaseProvider.class, method = "execute")
     void exec(String sql);
@@ -189,8 +180,8 @@ public interface DataBaseMapper<Entity, Query extends DataBaseGenericPage, Examp
     /**
      * 执行自定义SQL
      *
-     * @param params 参数
+     * @param input Map
      */
     @UpdateProvider(type = DataBaseProvider.class, method = "executeWithParams")
-    void execWithParams(Map<String, Object> params);
+    void execWithParams(Map<String, Object> input);
 }

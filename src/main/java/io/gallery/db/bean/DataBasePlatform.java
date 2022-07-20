@@ -4,5 +4,6 @@ public enum DataBasePlatform {
     postgres,
     mysql,
     sqlserver,
-    dm
+    dm,
+    sqlite
 }

@@ -8,64 +8,62 @@ import java.util.*;
 
 /**
  * 数据绑定异常工具类
- * 
- *
  */
 public class DataBaseBindingResultUtil {
 
-	private DataBaseBindingResultUtil() {
-	}
+    private DataBaseBindingResultUtil() {
+    }
 
-	public static Object getErrorMessages(BindingResult bindingResult) {
-		if (bindingResult == null) {
-			return null;
-		}
+    public static Object getErrorMessages(BindingResult bindingResult) {
+        if (bindingResult == null) {
+            return null;
+        }
 
-		Map<String, Object> root = new HashMap<String, Object>();
-		if (bindingResult.hasErrors()) {
-			root.put("success", false);
-			root.put("globalErrors", getGlobalErrors(bindingResult));
-			root.put("fieldErrors", getFieldErros(bindingResult));
-		} else {
-			root.put("success", true);
-		}
+        Map<String, Object> root = new HashMap<>();
+        if (bindingResult.hasErrors()) {
+            root.put("success", false);
+            root.put("globalErrors", getGlobalErrors(bindingResult));
+            root.put("fieldErrors", getFieldErros(bindingResult));
+        } else {
+            root.put("success", true);
+        }
 
-		return root;
-	}
+        return root;
+    }
 
-	/**
-	 * 设置全局错误
-	 * 
-	 * @param bindingResult BindingResult
-	 * @return 列表
-	 */
-	public static List<String> getGlobalErrors(BindingResult bindingResult) {
-		List<String> globalErrors = new ArrayList<String>();
-		for (ObjectError oe : bindingResult.getGlobalErrors()) {
-			globalErrors.add(oe.getDefaultMessage());
-		}
-		return globalErrors;
-	}
+    /**
+     * 设置全局错误
+     *
+     * @param bindingResult BindingResult
+     * @return List
+     */
+    public static List<String> getGlobalErrors(BindingResult bindingResult) {
+        List<String> globalErrors = new ArrayList<>();
+        for (ObjectError oe : bindingResult.getGlobalErrors()) {
+            globalErrors.add(oe.getDefaultMessage());
+        }
+        return globalErrors;
+    }
 
-	/**
-	 * 设置字段属性错误
-	 * 
-	 * @param bindingResult BindingResult
-	 * @return Map
-	 */
-	public static Map<String, List<String>> getFieldErros(BindingResult bindingResult) {
-		Map<String, List<String>> fieldErrors = new HashMap<String, List<String>>();
-		for (FieldError fe : bindingResult.getFieldErrors()) {
-			String f = fe.getField();
+    /**
+     * 设置字段属性错误
+     *
+     * @param bindingResult BindingResult
+     * @return Map
+     */
+    public static Map<String, List<String>> getFieldErros(BindingResult bindingResult) {
+        Map<String, List<String>> fieldErrors = new HashMap<>();
+        for (FieldError fe : bindingResult.getFieldErrors()) {
+            String f = fe.getField();
 
-			if (fieldErrors.get(f) != null) {
-				fieldErrors.get(f).add(fe.getDefaultMessage());
-			} else {
-				List<String> list = new LinkedList<String>();
-				list.add(fe.getDefaultMessage());
-				fieldErrors.put(f, list);
-			}
-		}
-		return fieldErrors;
-	}
+            if (fieldErrors.get(f) != null) {
+                fieldErrors.get(f).add(fe.getDefaultMessage());
+            } else {
+                List<String> list = new LinkedList<>();
+                list.add(fe.getDefaultMessage());
+                fieldErrors.put(f, list);
+            }
+        }
+        return fieldErrors;
+    }
 }

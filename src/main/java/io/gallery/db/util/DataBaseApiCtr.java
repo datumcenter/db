@@ -1,5 +1,7 @@
 package io.gallery.db.util;
 
+import io.gallery.db.bean.DataBaseGenericPage;
+import io.gallery.db.service.IDataBaseGenericService;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -12,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DataBaseApiCtr extends DataBaseGenericCtr {
+public class DataBaseApiCtr<Interface extends IDataBaseGenericService, Entity, Query extends DataBaseGenericPage> extends DataBaseGenericCtr<Interface, Entity, Query> {
 
     protected String defaultDb;
 

@@ -35,8 +35,9 @@ public class DataBaseApisService extends DataBaseGenericService implements IData
                 HashMap record = (HashMap) selectOne(map);
                 if (record != null) {
 
-                } else
+                } else {
                     insert(map);
+                }
             } catch (Exception e) {
                 logger.error("auth error: " + e.getMessage());
             }

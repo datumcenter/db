@@ -1,7 +1,6 @@
 package io.gallery.db.bean;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import io.gallery.db.util.DBT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -12,18 +11,17 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "db.info")//springboot 获取配置方式
 public class DataBaseConfig {
-    private static final Log logger = LogFactory.getLog(DataBaseConfig.class);
 
     /**
      * 数据库平台（默认mysql）
      */
-    @Value("${db.info.platform:mysql}")//springmvc 获取配置方式
+    @Value("${db.info.platform:}")//springmvc 获取配置方式
     private String platform;
 
     /**
-     * 默认数据库（默认lrapp）
+     * 默认数据库
      */
-    @Value("${db.info.deafultDb:lrapp}")//springmvc 获取配置方式
+    @Value("${db.info.deafultDb:}")//springmvc 获取配置方式
     private String deafultDb;
 
     /**
@@ -35,7 +33,7 @@ public class DataBaseConfig {
     /**
      * 树查询父节点字段名
      */
-    @Value("${db.info.treeColumn:pid}")//springmvc 获取配置方式
+    @Value("${db.info.treeColumn:id_at_me__parent}")//springmvc 获取配置方式
     private String treeColumn;
 
     /**
@@ -81,16 +79,30 @@ public class DataBaseConfig {
     private boolean returnInserted;
 
     /**
-     * @Cacheable缓存默认有效期，默认21600秒（6小时）
+     * @Cacheable缓存默认有效期，默认3600秒（1小时）
      */
-    @Value("${db.info.ttl:21600}")//springmvc 获取配置方式
+    @Value("${db.info.ttl:3600}")//springmvc 获取配置方式
     private long ttl;
 
-    public static Log getLogger() {
-        return logger;
-    }
+    /**
+     * 默认项目
+     */
+    @Value("${db.info.app-id:api}")//springmvc 获取配置方式
+    private String appId;
+
+    /**
+     * 代理端口号
+     */
+    @Value("${db.info.proxyPort:808}")//springmvc 获取配置方式
+    private int proxyPort;
 
     public String getPlatform() {
+        if (DBT.isNull(platform)) {
+            platform = DBT.getPlatform();
+            if (DBT.isNull(platform)) {
+                platform = "mysql";
+            }
+        }
         return platform;
     }
 
@@ -184,5 +196,21 @@ public class DataBaseConfig {
 
     public void setColumnCase(String columnCase) {
         this.columnCase = columnCase;
+    }
+
+    public String getAppId() {
+        return appId;
+    }
+
+    public void setAppId(String appId) {
+        this.appId = appId;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
     }
 }

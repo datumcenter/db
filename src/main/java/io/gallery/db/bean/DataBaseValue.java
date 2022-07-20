@@ -14,14 +14,14 @@ public enum DataBaseValue {
     /**
      * 获取操作符
      *
-     * @return 字符串
+     * @return String
      */
     public String getOperator() {
         return operator;
     }
 
 
-    private DataBaseValue(String operator) {
+    DataBaseValue(String operator) {
         this.operator = operator;
     }
 
@@ -33,8 +33,8 @@ public enum DataBaseValue {
     /**
      * 判断字段中是否包含操作符
      *
-     * @param input 入参
-     * @return 是否
+     * @param input input
+     * @return boolean
      */
     public static boolean containsOperator(String input) {
         boolean result = false;
@@ -43,6 +43,7 @@ public enum DataBaseValue {
                 String lowerCase = input.toLowerCase();
                 if (lowerCase.contains(value.getOperator())) {
                     result = true;
+                    break;
                 }
             }
         }
@@ -52,8 +53,8 @@ public enum DataBaseValue {
     /**
      * 获取字符串中包含的操作符
      *
-     * @param input 入参
-     * @return 字符串
+     * @param input String
+     * @return String
      */
     public static String getOperator(String input) {
         String result = "";
@@ -68,8 +69,8 @@ public enum DataBaseValue {
     /**
      * operator起始位置
      *
-     * @param input 入参
-     * @return 数字
+     * @param input String
+     * @return int
      */
     public static int indexOfOperator(String input) {
         int result = -1;
@@ -96,8 +97,8 @@ public enum DataBaseValue {
     /**
      * 获取真实值
      *
-     * @param input 入参
-     * @return 字符串
+     * @param input String
+     * @return String
      */
     public static String getRealValue(String input) {
         String result = input;
@@ -115,7 +116,7 @@ public enum DataBaseValue {
     /**
      * 处理值信息
      *
-     * @param input 入参
+     * @param input String
      * @return ClauseValue
      */
     public static ClauseValue dealValueClause(String input) {

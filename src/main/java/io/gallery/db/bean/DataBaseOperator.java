@@ -4,7 +4,7 @@ import io.gallery.db.util.DBT;
 import io.gallery.db.util.DataBaseTools;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -33,33 +33,35 @@ public enum DataBaseOperator {
      * or 运算符
      */
     public static final String _or_ = "_or_";
+    /**
+     * 值为函数
+     */
+    public static final String _func = "_func";
 
     /**
      * 获取操作符
      *
-     * @return 字符串
+     * @return String
      */
     public String getOperator() {
         return operator;
     }
 
 
-    private DataBaseOperator(String operator) {
+    DataBaseOperator(String operator) {
         this.operator = operator;
     }
 
     /**
      * 枚举值
-     *
-     * @return 字符串
      */
     private String operator;
 
     /**
      * 判断字段中是否包含操作符或函数
      *
-     * @param columnClause 字段信息
-     * @return 是否
+     * @param columnClause String
+     * @return boolean
      */
     public static boolean containsOperator(String columnClause) {
         boolean result = false;
@@ -68,6 +70,7 @@ public enum DataBaseOperator {
                 String lowerCase = columnClause.toLowerCase();
                 if (lowerCase.endsWith(value.name())) {
                     result = true;
+                    break;
                 }
             }
         }
@@ -77,8 +80,8 @@ public enum DataBaseOperator {
     /**
      * 获取字符串中包含的操作符
      *
-     * @param input 入参
-     * @return 字符串
+     * @param input String
+     * @return String
      */
     public static String getOperator(String input) {
         String result = _eq.getOperator();
@@ -96,8 +99,8 @@ public enum DataBaseOperator {
     /**
      * 获取字符串中包含的函数
      *
-     * @param input 入参
-     * @return 字符串
+     * @param input String
+     * @return String
      */
     public static String getFunction(String input) {
         String result = "";
@@ -110,8 +113,8 @@ public enum DataBaseOperator {
     /**
      * operator起始位置
      *
-     * @param columnClause 入参
-     * @return 数字
+     * @param columnClause String
+     * @return int
      */
     public static int indexOfOperator(String columnClause) {
         int result = -1;
@@ -120,7 +123,7 @@ public enum DataBaseOperator {
             result = columnClause.length();
             String operator = "";
             List<DataBaseOperator> dataBaseOperators = Arrays.asList(DataBaseOperator.values());
-            Collections.sort(dataBaseOperators, (o1, o2) -> o1.name().length() - o2.name().length());
+            dataBaseOperators.sort(Comparator.comparingInt(o -> o.name().length()));
             if (DataBaseTools.isNotNull(columnClause)) {
                 for (DataBaseOperator value : dataBaseOperators) {
                     if (columnClause.endsWith(value.name())) {
@@ -138,8 +141,8 @@ public enum DataBaseOperator {
     /**
      * 获取真实表名.字段名
      *
-     * @param input 入参
-     * @return 字符串
+     * @param input String
+     * @return String
      */
     public static String getRealColumn(String input) {
         String result = input;
@@ -158,13 +161,13 @@ public enum DataBaseOperator {
                 }
             }
         }
-        return result;
+        return result.substring(0, !result.contains(_func) ? result.length() : result.indexOf(_func));
     }
 
     /**
      * 处理字段信息
      *
-     * @param input 入参
+     * @param input String
      * @return ClauseColumn
      */
     public static ClauseColumn dealColumnClause(String input) {
