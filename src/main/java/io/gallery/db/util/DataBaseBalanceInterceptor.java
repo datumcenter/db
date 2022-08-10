@@ -15,11 +15,13 @@ public class DataBaseBalanceInterceptor implements HandlerInterceptor {
     @Autowired
     private Environment environment;
 
+    private static final String LB_ID = UUID.randomUUID().toString();
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String id = environment.getProperty("eureka.instance.instance-id");
         if (DBT.isNull(id)) {
-            id = UUID.randomUUID().toString();
+            id = LB_ID;
         }
         Cookie cookie = new Cookie("slb_id", id);
         cookie.setPath("/");
