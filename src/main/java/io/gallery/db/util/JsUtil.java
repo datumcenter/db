@@ -29,23 +29,23 @@ public class JsUtil {
     public static Object run(String code, String name) {
         Object result = null;
         if (DBT.isNotNull(code)) {
-            code = code.replaceAll("DataBaseUtil\\.", "com.longruan.ark.common.db.util.DataBaseUtil.");
+            code = code.replaceAll("DataBaseUtil\\.", "io.gallery.db.util.DataBaseUtil.");
             //logger.info(code);
-            code = code.replaceAll("DataBaseTools\\.", "com.longruan.ark.common.db.util.DataBaseTools.");
+            code = code.replaceAll("DataBaseTools\\.", "io.gallery.db.util.DataBaseTools.");
             //logger.info(code);
-            code = code.replaceAll("DataSourceUtil\\.", "com.longruan.ark.common.db.util.DataSourceUtil.");
+            code = code.replaceAll("DataSourceUtil\\.", "io.gallery.db.util.DataSourceUtil.");
             //logger.info(code);
-            code = code.replaceAll("DataBaseSpringUtil\\.", "com.longruan.ark.common.db.util.DataBaseSpringUtil.");
+            code = code.replaceAll("DataBaseSpringUtil\\.", "io.gallery.db.util.DataBaseSpringUtil.");
             //logger.info(code);
-            code = code.replaceAll("DSUtil\\.", "com.longruan.ark.common.db.util.DSUtil.");
+            code = code.replaceAll("DSUtil\\.", "io.gallery.db.util.DSUtil.");
             //logger.info(code);
-            code = code.replaceAll("DS\\.", "com.longruan.ark.common.db.util.DataSourceUtil.");
+            code = code.replaceAll("DS\\.", "io.gallery.db.util.DataSourceUtil.");
             //logger.info(code);
-            code = code.replaceAll("DB\\.", "com.longruan.ark.common.db.util.DataBaseUtil.");
+            code = code.replaceAll("DB\\.", "io.gallery.db.util.DataBaseUtil.");
             //logger.info(code);
-            code = code.replaceAll("DBT\\.", "com.longruan.ark.common.db.util.DataBaseTools.");
-            code = code.replaceAll("Maps\\.", "com.longruan.ark.common.db.util.Maps.");
-            code = code.replaceAll("ExportType\\.", "com.longruan.ark.common.db.bean.");
+            code = code.replaceAll("DBT\\.", "io.gallery.db.util.DataBaseTools.");
+            code = code.replaceAll("Maps\\.", "io.gallery.db.util.Maps.");
+            code = code.replaceAll("ExportType\\.", "io.gallery.db.bean.");
             //logger.info("code:" + code);
             try {
                 Source source = Source.newBuilder("js", code, name).build();
