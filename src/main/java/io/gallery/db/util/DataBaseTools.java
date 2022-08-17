@@ -1194,6 +1194,16 @@ public class DataBaseTools {
         return value;
     }
 
+    public static void setCookie(String name, String value) {
+        HttpServletResponse response = getResponse();
+        if (response != null && isNotNull(name)) {
+            Cookie cookie = new Cookie(name, value);
+            cookie.setPath("/");
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);
+        }
+    }
+
     /**
      * 清除表结构缓存
      */
