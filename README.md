@@ -1,2 +1,2 @@
 # gallery-db 
-###### Quasi non-background development framework
+###### Quasi non-background development framework.
